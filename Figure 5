@@ -60,6 +60,7 @@ round_df <- function(x, digits) {
 # Create colour palette for plots
 colours6 <- c("cyan4","aquamarine2","lightgoldenrod1","goldenrod1","coral1","indianred3")
 
+
 ## Figure 5A - Bacterial Alpha Diversity Trend Random Forest
 
 # Filter data for columns of interest
@@ -143,7 +144,9 @@ lgdata_bacteria <- CHILD_metadata_3[, c("Shannon_dif_cat_bacteria", "sex", "csec
 for (i in lgdata_bacteria[,2:12]) {
   print(xtabs(~Shannon_dif_cat_bacteria + i, lmdata))
 }
+
 # Antibiotic exposure from 3-12 months is not well-distributed = omit from model
+lgdata_bacteria <- lgdata_bacteria[, c("Shannon_dif_cat_bacteria", "sex", "csec", "BF_3m_status", "solids_introduced_months", "Prebirth_abs_oralIV_yn", "Mother_abs_birth_yn", "fut2_infant", "fut2_mom", "AS_bev4", "hei2010_10")]
 
 # Determine number of NA's
 summary(lgdata_bacteria)
@@ -285,3 +288,83 @@ fungi_rf_plot <- ggplot(m1, aes(reorder(features, MeanDecreaseGini), MeanDecreas
                             "PCoA1_bacteria_3m" = "Bacterial Beta Diversity (3 Months)", "PCoA1_bacteria_1y" = "Bacterial Beta Diversity (1 Year)", 
                             "solids_introduced_months" = "Age at Introduction of Solid Foods"))
 fungi_rf_plot
+
+
+## Figure 5D - Fungal Alpha Diversity Trend Logistic Regression & Forest Plot
+
+# Filter data for columns of interest
+lgdata_fungi <- CHILD_metadata_3[, c("Shannon_dif_cat_fungi", "sex", "csec", "BF_3m_status", "solids_introduced_months", "Prebirth_abs_oralIV_yn", "Mother_abs_birth_yn", "Child_3moto1Y_abs", "fut2_infant", "fut2_mom", "AS_bev4", "hei2010_10")]
+
+# Examine distribution of variables by bacterial alpha diversity trend
+for (i in lgdata_fungi[,2:12]) {
+  print(xtabs(~Shannon_dif_cat_fungi + i, lgdata_fungi))
+}
+# Prenatal antibiotics exposure is not well-distributed = omit from model
+lgdata_fungi <- lgdata_fungi[, c("Shannon_dif_cat_fungi", "sex", "csec", "BF_3m_status", "solids_introduced_months", "Mother_abs_birth_yn", "Child_3moto1Y_abs", "fut2_infant", "fut2_mom", "AS_bev4", "hei2010_10")]
+
+# Determine number of NA's
+summary(lgdata_fungi)
+
+# Remove NA's from dataset
+lgdata_fungi <- lgdata_fungi %>% na.omit()
+
+# Check data before performing logistic regression
+summary(lgdata_fungi)
+
+# Generate logistic regression model by bacterial alpha diversity trend and check model performance
+mylogit <- glm(Shannon_dif_cat_fungi ~ sex + BF_3m_status + csec + solids_introduced_months + fut2_infant + fut2_mom  +  Mother_abs_birth_yn +  Child_3moto1Y_abs + hei2010_10 + AS_bev4, data = lgdata_fungi, family = "binomial")
+summary(mylogit)
+check_collinearity(mylogit)
+check_model(mylogit)
+plot(mylogit)
+
+# Extract coefficients from model (odds ratio, confidence interval, p-value) into dataframe
+logisticr_df_fungi <- exp(cbind(OR = coef(mylogit), confint(mylogit)))
+p <- coef(summary(mylogit))[,'Pr(>|z|)']
+logisticr_df_fungi <- cbind(logisticr_df_fungi, p.value = p)
+logisticr_df_fungi <- as.data.frame(logisticr_df_fungi)
+
+# Add stars column for significance
+logisticr_df_fungi$stars <- cut(logisticr_df_fungi$p.value, breaks=c(-Inf, 0.001, 0.01, 0.05,0.1, Inf), label=c("***", "**", "*","~","")) 
+
+# Write csv in order to add column grouping (factor) and adjust column labels
+# OR = Odds Ratio, Lower = 2.5% CI, Upper = 97.5% CI, Element = Variable, Factor = Category for colour coding
+write.csv(logisticr_df_fungi, "logisticr_df_fungi.csv")
+
+# Read in updated csv and filter out model intercept
+logisticr_df_fungi <- read.csv("logisticr_df_fungi.csv")
+logisticr_df_fungi <- logisticr_df_fungi %>% filter(Factor != "NA")
+
+# Order variables in dataframe based on random forest results (mean decreasing Gini index) to enable plot comparability
+logisticr_df_fungi$Element <- factor(logisticr_df_fungi$Element, levels = c("csecC-Section", "Child_3moto1Y_absYes", "sexFemale", "Mother_abs_birth_ynYes","fut2_momGG","fut2_momAG", "BF_3m_statusPartial","BF_3m_statusExclusive", "fut2_infantGG", "fut2_infantAG", "solids_introduced_months",  "AS_bev41", "hei2010_10"))
+
+# Forest plot of bacterial alpha diversity trend logisitc regression results (Figure 5B)
+fungi_lg_fp <- ggplot(logisticr_df_fungi, aes(x=Element, y=OR, ymin=Lower, ymax=Upper, color = Factor))+
+  geom_pointrange(position = position_dodge(width = 0.60))+
+  geom_hline(yintercept = 1, linetype=2)+
+  coord_flip()+
+  xlab('')+
+  ylab("Adjusted OR (95% CI)")+
+  scale_y_continuous(trans='log10',
+                     breaks=trans_breaks('log10', function(x) 10^x),
+                     labels=trans_format('log10', math_format(10^.x)))+
+  ggtitle("Decreasing Bacterial Alpha Diversity Trend")+
+  geom_errorbar(aes(ymin=Lower, ymax=Upper),width=0.25, position = position_dodge(width = 0.60), size=0.75)+
+  geom_text(aes(x = Element, y = OR, label=stars), color="black", size=7, hjust = 0.5, vjust = 0.1) + 
+  theme_bw()+
+  theme(plot.title = element_text(size=11, hjust = 0.5, face = "bold"),
+        axis.title=element_text(face = "bold", size = 12.5),
+        axis.text = element_text(size = 12.5),
+        legend.title = element_text(face = "bold", size = 11), 
+        legend.text = element_text(size = 11),
+        legend.text.align = 0,
+        legend.position = "none")+
+  scale_color_manual(values=c("darkcyan","aquamarine3","goldenrod2","coral1"))+
+  scale_x_discrete(labels=c("hei2010_10" = "Maternal Healthy Eating Index", "AS_bev41" = "Gestational AS Beverages Consumption",
+                            "BF_3m_statusPartial" = "Partial Breastfeeding (3 Months)", "BF_3m_statusExclusive" = "Exclusive Breastfeeding (3 Months)", 
+                            "Child_3moto1Y_abs" = "Infant Antibiotic Exposure (3-12 Months)", "Mother_abs_birth_ynYes" = "Intrapartum Antibiotics", 
+                            "csecC-Section" = "Birth Mode (C-Section)", "sexFemale" = "Infant Sex (Female)", 
+                            "fut2_infantAG" = "Infant FUT2 Secretor Genotype (AG)", "fut2_infantGG" = "Infant FUT2 Secretor Genotype (GG)", 
+                            "fut2_momAG" = "Maternal FUT2 Secretor Genotype (AG)", "fut2_momGG" = "Maternal FUT2 Secretor Genotype (GG)", 
+                            "solids_introduced_months" = "Age at Introduction of Solid Foods"))
+fungi_lg_fp
