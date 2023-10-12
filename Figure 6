@@ -24,7 +24,7 @@ metabo_3m_prime_bacteria$Shannon_dif_cat_bacteria <- factor(metabo_3m_prime_bact
 metabo_3m_organic_bacteria$Shannon_dif_cat_bacteria <- factor(metabo_3m_organic_bacteria$Shannon_dif_cat_bacteria, levels = c("Increase", "Decrease"))
 metabo_3m_organic_fungi$Shannon_dif_cat_fungi <- factor(metabo_3m_organic_fungi$Shannon_dif_cat_fungi, levels = c("Decrease", "Increase"))
 
-# Figure 6A - Trimethylamine N-Oxide Concentration at 3 Months by Bacterial Alpha Diversity Trend
+## Figure 6A - Trimethylamine N-Oxide Concentration at 3 Months by Bacterial Alpha Diversity Trend
 tmao_fig <- ggplot(metabo_3m_prime_bacteria, aes(x = Shannon_dif_cat_bacteria, y = Trimethylamine.N.oxide, fill = Shannon_dif_cat_bacteria)) + 
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   geom_jitter(aes(color = Shannon_dif_cat_bacteria), position = position_jitter(0.2),  size = 1.2) + 
@@ -40,7 +40,7 @@ tmao_fig <- ggplot(metabo_3m_prime_bacteria, aes(x = Shannon_dif_cat_bacteria, y
         plot.title = element_text(face = "bold", size = 12, color = "black", hjust = 0.5))
 tmao_fig
 
-# Figure 6B - Indole Acetic Acid Concentration at 3 Months by Bacterial Alpha Diversity Trend
+## Figure 6B - Indole Acetic Acid Concentration at 3 Months by Bacterial Alpha Diversity Trend
 iaa_fig <- ggplot(metabo_3m_prime_bacteria, aes(x = Shannon_dif_cat_bacteria, y = Indole.acetic.acid, fill = Shannon_dif_cat_bacteria)) + 
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   geom_jitter(aes(color = Shannon_dif_cat_bacteria), position = position_jitter(0.2),  size = 1.2) + 
@@ -56,7 +56,7 @@ iaa_fig <- ggplot(metabo_3m_prime_bacteria, aes(x = Shannon_dif_cat_bacteria, y 
         plot.title = element_text(face = "bold", size = 12, color = "black", hjust = 0.5))
 iaa_fig
 
-# Figure 6C - Creatine Concentration at 3 Months by Bacterial Alpha Diversity Trend
+## Figure 6C - Creatine Concentration at 3 Months by Bacterial Alpha Diversity Trend
 creat_fig <- ggplot(metabo_3m_prime_bacteria, aes(x = Shannon_dif_cat_bacteria, y = Creatine, fill = Shannon_dif_cat_bacteria)) + 
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   geom_jitter(aes(color = Shannon_dif_cat_bacteria), position = position_jitter(0.2),  size = 1.2) + 
@@ -72,7 +72,7 @@ creat_fig <- ggplot(metabo_3m_prime_bacteria, aes(x = Shannon_dif_cat_bacteria, 
         plot.title = element_text(face = "bold", size = 12, color = "black", hjust = 0.5))
 creat_fig
 
-# Figure 6D - 2-Furoylglycine Concentration at 3 Months by Bacterial Alpha Diversity Trend
+## Figure 6D - 2-Furoylglycine Concentration at 3 Months by Bacterial Alpha Diversity Trend
 fgly_fig <- ggplot(metabo_3m_organic_bacteria, aes(x = Shannon_dif_cat_bacteria, y = X2.Furoylglycine, fill = Shannon_dif_cat_bacteria)) + 
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   geom_jitter(aes(color = Shannon_dif_cat_bacteria), position = position_jitter(0.2),  size = 1.2) + 
@@ -88,7 +88,7 @@ fgly_fig <- ggplot(metabo_3m_organic_bacteria, aes(x = Shannon_dif_cat_bacteria,
         plot.title = element_text(face = "bold", size = 12, color = "black", hjust = 0.5))
 fgly_fig
 
-# Figure 6E - Lactic Acid Concentration at 3 Months by Fungal Alpha Diversity Trend
+## Figure 6E - Lactic Acid Concentration at 3 Months by Fungal Alpha Diversity Trend
 lact_fig <- ggplot(metabo_3m_organic_fungi, aes(x = Shannon_dif_cat_fungi, y = Lactic.acid, fill = Shannon_dif_cat_fungi)) + 
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   geom_jitter(aes(color = Shannon_dif_cat_fungi), position = position_jitter(0.2),  size = 1.2) + 
