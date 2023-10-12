@@ -1,1 +1,127 @@
+### Figure 5
 
+# Install packages
+library(ggplot2)
+library(tidyverse)
+library(pROC)
+library(randomForest)
+library(caret)
+
+# Load CHILD metadata and filter to a single timepoint
+CHILD_metadata <- read.csv("CHILD_metadata.csv", row.names = 1, header = T)
+CHILD_metadata_3 <- CHILD_metadata %>% filter(Sample_time == 3)
+
+# Create rounding function for rounding numeric values in dataframe (x) by specific number of digits
+round_df <- function(x, digits) {
+  numeric_columns <- sapply(x, mode) == 'numeric'
+  x[numeric_columns] <-  round(x[numeric_columns], digits)
+  x
+}
+
+# Create colour palette for plot
+colours6 <- c("cyan4","aquamarine2","lightgoldenrod1","goldenrod1","coral1","indianred3")
+
+## Figure 5A - Bacterial Alpha Diversity Trend Random Forest
+
+# Filter data for columns of interest
+bacteria_rf <- CHILD_metadata_3[, c("Shannon_dif_cat_bacteria", "sex", "csec", "BF_3m_status", "BF_duration_imp", "Mother_abs_birth_yn", "Prebirth_abs_oralIV_yn", "Child_3moto1Y_abs", 
+                 "hei2010", "AS_bev4", "Shannon_3m_fungi", "Shannon_1y_fungi", "PCoA1_fungi_3m","PCoA1_fungi_1y", "fut2_mom", "fut2_infant", "solids_introduced_months")]
+
+# Set column type and add reference levels for each column
+bacteria_rf$Shannon_dif_cat_bacteria <- as.factor(bacteria_rf$Shannon_dif_cat_bacteria)
+bacteria_rf$Shannon_dif_cat_bacteria <- relevel(bacteria_rf$Shannon_dif_cat_bacteria, ref = "Increase (Typical)")
+
+bacteria_rf$sex <- as.factor(bacteria_rf$sex)
+bacteria_rf$sex <- relevel(bacteria_rf$sex, ref = "Male")
+
+bacteria_rf$csec <- as.factor(bacteria_rf$csec)
+bacteria_rf$csec <- relevel(bacteria_rf$csec, ref = "Vaginal")
+
+bacteria_rf$BF_3m_status <- as.factor(bacteria_rf$BF_3m_status)
+bacteria_rf$BF_3m_status <- relevel(bacteria_rf$BF_3m_status, ref = "Zero")
+
+bacteria_rf$Mother_abs_birth_yn <- as.factor(bacteria_rf$Mother_abs_birth_yn)
+bacteria_rf$Mother_abs_birth_yn <- relevel(bacteria_rf$Mother_abs_birth_yn, ref = "No")
+
+bacteria_rf$Prebirth_abs_oralIV_yn <- as.factor(bacteria_rf$Prebirth_abs_oralIV_yn)
+bacteria_rf$Prebirth_abs_oralIV_yn <- relevel(bacteria_rf$Prebirth_abs_oralIV_yn, ref = "No")
+
+bacteria_rf$Child_3moto1Y_abs <- as.factor(bacteria_rf$Child_3moto1Y_abs)
+bacteria_rf$Child_3moto1Y_abs <- relevel(bacteria_rf$Child_3moto1Y_abs, ref = "No")
+
+bacteria_rf$fut2_infant <- as.factor(bacteria_rf$fut2_infant)
+bacteria_rf$fut2_infant <- relevel(bacteria_rf$fut2_infant, ref = "AA")
+
+bacteria_rf$fut2_mom <- as.factor(bacteria_rf$fut2_mom)
+bacteria_rf$fut2_mom <- relevel(bacteria_rf$fut2_mom, ref = "AA")
+
+bacteria_rf$BF_duration_imp <- as.numeric(bacteria_rf$BF_duration_imp)
+bacteria_rf$hei2010 <- as.numeric(bacteria_rf$hei2010)
+bacteria_rf$solids_introduced_months <- as.numeric(bacteria_rf$solids_introduced_months)
+
+# Determine number of NA's
+summary(bacteria_rf)
+
+# Remove NA's from dataset
+bacteria_rf <- bacteria_rf %>% na.omit()
+
+# Check data before performing random forest
+summary(bacteria_rf)
+
+# Set seed for reproducible results
+set.seed(151) 
+
+# Generate training dataset
+fit_control <- trainControl(method = "cv", number = 10)
+
+# Generate random forest for bacterial alpha diversity trend to determine factors that are most predictive/strongly associated with trend direction
+RF_state_classify <- randomForest(Shannon_dif_cat_bacteria ~ ., data=bacteria_rf, importance=TRUE, proximity=TRUE, nperm=1000, ntree=500, trControl=fit_control)
+RF_state_classify
+
+# Check AUC 
+rf.roc <- roc(bacteria_rf$Shannon_dif_cat_bacteria, RF_state_classify$votes[,2])
+plot(rf.roc)
+auc(rf.roc)
+
+# Determine feature importance and sort by mean decreasing Gini index
+RF_state_classify_imp <- as.data.frame(RF_state_classify$importance)
+RF_state_classify_imp$features <- rownames(RF_state_classify_imp)
+RF_state_classify_imp_sorted <- arrange(RF_state_classify_imp  , desc(MeanDecreaseGini))
+m <- as.data.frame(as.matrix(RF_state_classify_imp_sorted))
+
+# Round mean decreasing Gini index to 2 decimal places
+m$MeanDecreaseGini <- as.numeric(m$MeanDecreaseGini)
+m <- round_df(m, 2)
+
+# Assign features to categories for colour coding the figure
+m1 <- m %>% mutate(Factor = case_when(features %in% c("csec", "Child_3moto1Y_abs", "Mother_abs_birth_yn") ~ "Early Life Factors", 
+                                      features %in% c("BF_3m_status", "solids_introduced_months", "BF_duration_imp") ~ "Infant Nutrition", 
+                                      features %in% c("sex", "fut2_infant") ~ "Infant Factors", 
+                                      features %in% c("Shannon_3m_fungi","Shannon_1y_fungi", "PCoA1_fungi_3m","PCoA1_fungi_1y") ~ "Infant Mycobiome", 
+                                      features %in% c("hei2010", "Prebirth_abs_oralIV_yn", "AS_bev4", "fut2_mom") ~ "Maternal Factors"))
+
+# Plot random forest results by mean decreasing Gini index for bacterial alpha diversity trend (Figure 5A)
+bact_rf_plot <- ggplot(m1, aes(reorder(features, MeanDecreaseGini), MeanDecreaseGini, fill=Factor))+ 
+  geom_bar(stat="identity",  color = "black", width=0.6)+
+  labs(x="", y ="Mean Decreasing Gini Index")+
+  coord_flip()+
+  scale_colour_manual(values=c("black","black","black","black","black"))+
+  scale_fill_manual(values=colours6, name = "Factor")+
+  theme_bw()+
+  ggtitle("Predictors of Bacterial Alpha Diversity Trend")+
+  theme(plot.title = element_text(size=15, hjust = 0.5, face = "bold"),
+        axis.title = element_text(face = "bold", size = 15),
+        axis.text = element_text(size = 15),
+        legend.title = element_text(face = "bold", size = 13), 
+        legend.text = element_text(size = 13),
+        legend.text.align = 0)+
+  theme(legend.position = "right")+
+  scale_x_discrete(labels=c("hei2010" = "Maternal Healthy Eating Index", "AS_bev4" = "Gestational AS Beverages Consumption",
+                            "fut2_mom" = "FUT2 Secretor Genotype (Maternal)", "fut2_infant" = "FUT2 Secretor Genotype (Infant)", 
+                            "BF_3m_status" = "Breastfeeding Status (3 Months)", "BF_duration_imp" = "Breastfeeding Duration (Months)",  
+                            "Shannon_3m_fungi" = "Fungal Alpha Diversity (3 Months)", "Shannon_1y_fungi" = "Fungal Alpha Diversity (1 Year)",  
+                            "Prebirth_abs_oralIV_yn" = "Prenatal Antibiotics", "Child_3moto1Y_abs" = "Infant Antibiotic Exposure (3-12 Months)", 
+                            "Mother_abs_birth_yn" = "Intrapartum Antibiotics", "sex" = "Infant Sex", "csec" = "Birth Mode",
+                            "PCoA1_fungi_3m" = "Fungal Beta Diversity (3 Months)", "PCoA1_fungi_1y" = "Fungal Beta Diversity (1 Year)", 
+                            "solids_introduced_months" = "Age at Introduction of Solid Foods"))
+bact_rf_plot
