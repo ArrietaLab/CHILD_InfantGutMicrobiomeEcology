@@ -1,1 +1,62 @@
+### Figure 1 & S1A-B
+
+# Install packages
+library(phyloseq)
+library(ggplot2)
+library(tidyverse)
+
+# Load phyloseq objects
+load("ps_bacteria_clean")
+
+# Extract sample data from phyloseq object to use for analysis
+CHILD_metadata <- as(sample_data(ps_bacteria_clean), "data.frame")
+
+# Create summary statistics function for mean, minimum and maximum (minus one standard deviation)
+summary_stats <- function(x) {
+  m <- mean(x)
+  ymin <- m-sd(x)
+  ymax <- m+sd(x)
+  return(c(y=m,ymin=ymin,ymax=ymax))
+}
+
+# Set seed for reproducible results
+set.seed(60145)
+
+## Figure 1A-B
+
+# Calculate bacterial alpha diversity metrics (Shannon, Chao1)
+adiv_bacteria <- estimate_richness(ps_bacteria_clean, measures = c("Shannon","Chao1"))
+
+# Create new metadata columns for Chao1 and Shannon
+CHILD_metadata$Shannon_bacteria <- adiv_bacteria$Shannon_bacteria
+CHILD_metadata$Chao1_bacteria <- adiv_bacteria$Chao1_bacteria
+
+# Create filtered dataframes by timepoint
+CHILD_metadata_3 <- CHILD_metadata %>% filter(Sample_time == 3)
+CHILD_metadata_12 <- CHILD_metadata %>% filter(Sample_time == 12)
+
+# Determine the mean and standard deviation of bacterial alpha diversity metrics at 3 and 12 months
+mean(CHILD_metadata_3$Shannon_bacteria)
+sd(CHILD_metadata_3$Shannon_bacteria)
+mean(CHILD_metadata_12$Shannon_bacteria)
+sd(CHILD_metadata_12$Shannon_bacteria)
+
+mean(CHILD_metadata_3$Chao1_bacteria)
+sd(CHILD_metadata_3$Chao1_bacteria)
+mean(CHILD_metadata_12$Chao1_bacteria)
+sd(CHILD_metadata_12$Chao1_bacteria)
+
+# Plot bacterial Shannon index by sample time (Figure 1A)
+shannon_fig <- ggplot(CHILD_metadata, aes(x = Sample_time, y = Shannon_bacteria, fill = Sample_time, color = Sample_time)) + 
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(aes(color = Sample_time), position = position_jitter(0.2),  size = 1.2) + 
+  stat_summary(fun.data = summary_stats, size = 0.25)+
+  labs(x="Age (Months)", y="Bacterial Alpha Diversity (Shannon)")+
+  scale_color_manual(values = c("black", "black"))+
+  scale_fill_manual(values = c("cyan4","aquamarine2"))+
+  theme_bw()+
+  theme(axis.title = element_text(size = 11, face = "bold"),
+        axis.text = element_text(size = 10),
+        legend.position = "none")
+shannon_fig
 
