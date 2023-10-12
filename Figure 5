@@ -159,7 +159,7 @@ summary(lgdata_bacteria)
 
 # Generate logistic regression model by bacterial alpha diversity trend and check model performance
 mylogit <- glm(Shannon_dif_cat_bacteria ~ sex + BF_3m_status + csec + solids_introduced_months + fut2_infant + fut2_mom  + Prebirth_abs_oralIV_yn +  Mother_abs_birth_yn +  hei2010_10 + AS_bev4, data = lgdata_bacteria, family = "binomial")
-summary(mylogit)
+summary(mylogit) # Record values for Table S7
 check_collinearity(mylogit)
 check_model(mylogit)
 plot(mylogit)
@@ -313,7 +313,7 @@ summary(lgdata_fungi)
 
 # Generate logistic regression model by bacterial alpha diversity trend and check model performance
 mylogit <- glm(Shannon_dif_cat_fungi ~ sex + BF_3m_status + csec + solids_introduced_months + fut2_infant + fut2_mom  +  Mother_abs_birth_yn +  Child_3moto1Y_abs + hei2010_10 + AS_bev4, data = lgdata_fungi, family = "binomial")
-summary(mylogit)
+summary(mylogit) # Record values for Table S8
 check_collinearity(mylogit)
 check_model(mylogit)
 plot(mylogit)
