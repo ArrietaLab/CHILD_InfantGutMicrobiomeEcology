@@ -4,6 +4,8 @@
 library(phyloseq)
 library(ggplot2)
 library(tidyverse)
+library(DESeq2)
+library(vegan)
 
 # Load phyloseq objects
 load("ps_bacteria_clean")
@@ -60,3 +62,24 @@ shannon_fig <- ggplot(CHILD_metadata, aes(x = Sample_time, y = Shannon_bacteria,
         legend.position = "none")
 shannon_fig
 
+# Test for normality and perform Wilcox test
+shapiro.test(CHILD_metadata_$Shannon_bacteria)
+wilcox.test(Shannon_bacteria ~ Sample_time, data = CHILD_metadata)
+
+# Plot bacterial Chao1 index by sample time (Figure 1B)
+chao1_fig <- ggplot(CHILD_metadata, aes(x = Sample_time, y = Chao1_bacteria, fill = Sample_time, color = Sample_time)) + 
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(aes(color = Sample_time), position = position_jitter(0.2),  size = 1.2) + 
+  stat_summary(fun.data = summary_stats, size = 0.25)+
+  labs(x="Age (Months)", y="Bacterial Richness (Chao1)")+
+  scale_color_manual(values = c("black", "black"))+
+  scale_fill_manual(values = c("cyan4","aquamarine2"))+
+  theme_bw()+
+  theme(axis.title = element_text(size = 11, face = "bold"),
+        axis.text = element_text(size = 10),
+        legend.position = "none")
+chao1_fig
+
+# Test for normality and perform Wilcox test
+shapiro.test(CHILD_metadata_$Chao1_bacteria)
+wilcox.test(Chao1_bacteria ~ Sample_time, data = CHILD_metadata)
