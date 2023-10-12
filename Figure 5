@@ -6,10 +6,49 @@ library(tidyverse)
 library(pROC)
 library(randomForest)
 library(caret)
+library(performance)
+library(stats)
+library(scales)
 
 # Load CHILD metadata and filter to a single timepoint
 CHILD_metadata <- read.csv("CHILD_metadata.csv", row.names = 1, header = T)
 CHILD_metadata_3 <- CHILD_metadata %>% filter(Sample_time == 3)
+
+# Set column type and add reference levels for columns of interest
+CHILD_metadata_3$Shannon_dif_cat_bacteria <- as.factor(CHILD_metadata_3$Shannon_dif_cat_bacteria)
+CHILD_metadata_3$Shannon_dif_cat_bacteria <- relevel(CHILD_metadata_3$Shannon_dif_cat_bacteria, ref = "Increase (Typical)")
+
+CHILD_metadata_3$Shannon_dif_cat_fungi <- as.factor(CHILD_metadata_3$Shannon_dif_cat_fungi)
+CHILD_metadata_3$Shannon_dif_cat_fungi <- relevel(CHILD_metadata_3$Shannon_dif_cat_fungi, ref = "Decrease (Typical)")
+
+CHILD_metadata_3$sex <- as.factor(CHILD_metadata_3$sex)
+CHILD_metadata_3$sex <- relevel(CHILD_metadata_3$sex, ref = "Male")
+
+CHILD_metadata_3$csec <- as.factor(CHILD_metadata_3$csec)
+CHILD_metadata_3$csec <- relevel(CHILD_metadata_3$csec, ref = "Vaginal")
+
+CHILD_metadata_3$BF_3m_status <- as.factor(CHILD_metadata_3$BF_3m_status)
+CHILD_metadata_3$BF_3m_status <- relevel(CHILD_metadata_3$BF_3m_status, ref = "Zero")
+
+CHILD_metadata_3$Mother_abs_birth_yn <- as.factor(CHILD_metadata_3$Mother_abs_birth_yn)
+CHILD_metadata_3$Mother_abs_birth_yn <- relevel(CHILD_metadata_3$Mother_abs_birth_yn, ref = "No")
+
+CHILD_metadata_3$Prebirth_abs_oralIV_yn <- as.factor(CHILD_metadata_3$Prebirth_abs_oralIV_yn)
+CHILD_metadata_3$Prebirth_abs_oralIV_yn <- relevel(CHILD_metadata_3$Prebirth_abs_oralIV_yn, ref = "No")
+
+CHILD_metadata_3$Child_3moto1Y_abs <- as.factor(CHILD_metadata_3$Child_3moto1Y_abs)
+CHILD_metadata_3$Child_3moto1Y_abs <- relevel(CHILD_metadata_3$Child_3moto1Y_abs, ref = "No")
+
+CHILD_metadata_3$fut2_infant <- as.factor(CHILD_metadata_3$fut2_infant)
+CHILD_metadata_3$fut2_infant <- relevel(CHILD_metadata_3$fut2_infant, ref = "AA")
+
+CHILD_metadata_3$fut2_mom <- as.factor(CHILD_metadata_3$fut2_mom)
+CHILD_metadata_3$fut2_mom <- relevel(CHILD_metadata_3$fut2_mom, ref = "AA")
+
+CHILD_metadata_3$BF_duration_imp <- as.numeric(CHILD_metadata_3$BF_duration_imp)
+CHILD_metadata_3$hei2010 <- as.numeric(CHILD_metadata_3$hei2010)
+CHILD_metadata_3$hei2010_10 = (CHILD_metadata_3$hei2010)/10 # Scale HEI by dividing by 10 for improved plotting
+CHILD_metadata_3$solids_introduced_months <- as.numeric(CHILD_metadata_3$solids_introduced_months)
 
 # Create rounding function for rounding numeric values in dataframe (x) by specific number of digits
 round_df <- function(x, digits) {
@@ -18,7 +57,7 @@ round_df <- function(x, digits) {
   x
 }
 
-# Create colour palette for plot
+# Create colour palette for plots
 colours6 <- c("cyan4","aquamarine2","lightgoldenrod1","goldenrod1","coral1","indianred3")
 
 ## Figure 5A - Bacterial Alpha Diversity Trend Random Forest
@@ -26,38 +65,6 @@ colours6 <- c("cyan4","aquamarine2","lightgoldenrod1","goldenrod1","coral1","ind
 # Filter data for columns of interest
 bacteria_rf <- CHILD_metadata_3[, c("Shannon_dif_cat_bacteria", "sex", "csec", "BF_3m_status", "BF_duration_imp", "Mother_abs_birth_yn", "Prebirth_abs_oralIV_yn", "Child_3moto1Y_abs", 
                  "hei2010", "AS_bev4", "Shannon_3m_fungi", "Shannon_1y_fungi", "PCoA1_fungi_3m","PCoA1_fungi_1y", "fut2_mom", "fut2_infant", "solids_introduced_months")]
-
-# Set column type and add reference levels for each column
-bacteria_rf$Shannon_dif_cat_bacteria <- as.factor(bacteria_rf$Shannon_dif_cat_bacteria)
-bacteria_rf$Shannon_dif_cat_bacteria <- relevel(bacteria_rf$Shannon_dif_cat_bacteria, ref = "Increase (Typical)")
-
-bacteria_rf$sex <- as.factor(bacteria_rf$sex)
-bacteria_rf$sex <- relevel(bacteria_rf$sex, ref = "Male")
-
-bacteria_rf$csec <- as.factor(bacteria_rf$csec)
-bacteria_rf$csec <- relevel(bacteria_rf$csec, ref = "Vaginal")
-
-bacteria_rf$BF_3m_status <- as.factor(bacteria_rf$BF_3m_status)
-bacteria_rf$BF_3m_status <- relevel(bacteria_rf$BF_3m_status, ref = "Zero")
-
-bacteria_rf$Mother_abs_birth_yn <- as.factor(bacteria_rf$Mother_abs_birth_yn)
-bacteria_rf$Mother_abs_birth_yn <- relevel(bacteria_rf$Mother_abs_birth_yn, ref = "No")
-
-bacteria_rf$Prebirth_abs_oralIV_yn <- as.factor(bacteria_rf$Prebirth_abs_oralIV_yn)
-bacteria_rf$Prebirth_abs_oralIV_yn <- relevel(bacteria_rf$Prebirth_abs_oralIV_yn, ref = "No")
-
-bacteria_rf$Child_3moto1Y_abs <- as.factor(bacteria_rf$Child_3moto1Y_abs)
-bacteria_rf$Child_3moto1Y_abs <- relevel(bacteria_rf$Child_3moto1Y_abs, ref = "No")
-
-bacteria_rf$fut2_infant <- as.factor(bacteria_rf$fut2_infant)
-bacteria_rf$fut2_infant <- relevel(bacteria_rf$fut2_infant, ref = "AA")
-
-bacteria_rf$fut2_mom <- as.factor(bacteria_rf$fut2_mom)
-bacteria_rf$fut2_mom <- relevel(bacteria_rf$fut2_mom, ref = "AA")
-
-bacteria_rf$BF_duration_imp <- as.numeric(bacteria_rf$BF_duration_imp)
-bacteria_rf$hei2010 <- as.numeric(bacteria_rf$hei2010)
-bacteria_rf$solids_introduced_months <- as.numeric(bacteria_rf$solids_introduced_months)
 
 # Determine number of NA's
 summary(bacteria_rf)
@@ -127,8 +134,83 @@ bact_rf_plot <- ggplot(m1, aes(reorder(features, MeanDecreaseGini), MeanDecrease
 bact_rf_plot
 
 
+## Figure 5B - Bacterial Alpha Diversity Trend Logistic Regression & Forest Plot
 
+# Filter data for columns of interest
+lgdata_bacteria <- CHILD_metadata_3[, c("Shannon_dif_cat_bacteria", "sex", "csec", "BF_3m_status", "solids_introduced_months", "Prebirth_abs_oralIV_yn", "Mother_abs_birth_yn", "Child_3moto1Y_abs", "fut2_infant", "fut2_mom", "AS_bev4", "hei2010_10")]
 
+# Examine distribution of variables by bacterial alpha diversity trend
+for (i in lgdata_bacteria[,2:12]) {
+  print(xtabs(~Shannon_dif_cat_bacteria + i, lmdata))
+}
+# Antibiotic exposure from 3-12 months is not well-distributed = omit from model
+
+# Determine number of NA's
+summary(lgdata_bacteria)
+
+# Remove NA's from dataset
+lgdata_bacteria <- lgdata_bacteria %>% na.omit()
+
+# Check data before performing logistic regression
+summary(lgdata_bacteria)
+
+# Generate logistic regression model by bacterial alpha diversity trend and check model performance
+mylogit <- glm(Shannon_dif_cat_bacteria ~ sex + BF_3m_status + csec + solids_introduced_months + fut2_infant + fut2_mom  + Prebirth_abs_oralIV_yn +  Mother_abs_birth_yn +  hei2010_10 + AS_bev4, data = lgdata_bacteria, family = "binomial")
+summary(mylogit)
+check_collinearity(mylogit)
+check_model(mylogit)
+plot(mylogit)
+
+# Extract coefficients from model (odds ratio, confidence interval, p-value) into dataframe
+logisticr_df_bacteria <- exp(cbind(OR = coef(mylogit), confint(mylogit)))
+p <- coef(summary(mylogit))[,'Pr(>|z|)']
+logisticr_df_bacteria <- cbind(logisticr_df_bacteria, p.value = p)
+logisticr_df_bacteria <- as.data.frame(logisticr_df_bacteria)
+
+# Add stars column for significance
+logisticr_df_bacteria$stars <- cut(logisticr_df_bacteria$p.value, breaks=c(-Inf, 0.001, 0.01, 0.05,0.1, Inf), label=c("***", "**", "*","~","")) 
+
+# Write csv in order to add column grouping (factor) and adjust column labels
+# OR = Odds Ratio, Lower = 2.5% CI, Upper = 97.5% CI, Element = Variable, Factor = Category for colour coding
+write.csv(logisticr_df_bacteria, "logisticr_df_bacteria.csv")
+
+# Read in updated csv and filter out model intercept
+logisticr_df_bacteria <- read.csv("logisticr_df_bacteria.csv")
+logisticr_df_bacteria <- logisticr_df_bacteria %>% filter(Factor != "NA")
+
+# Order variables in dataframe based on random forest results (mean decreasing Gini index) to enable plot comparability
+logisticr_df_bacteria$Element <- factor(logisticr_df_bacteria$Element, levels = c("sexFemale",  "Mother_abs_birth_ynYes", "AS_bev41", "csecC-Section", "Prebirth_abs_oralIV_ynYes","fut2_infantGG", "fut2_infantAG",  "fut2_momGG","fut2_momAG","solids_introduced_months", "BF_3m_statusPartial","BF_3m_statusExclusive","hei2010_10"))
+
+# Forest plot of bacterial alpha diversity trend logisitc regression results (Figure 5B)
+bacteria_lg_fp <- ggplot(logisticr_df_bacteria, aes(x=Element, y=OR, ymin=Lower, ymax=Upper, color = Factor))+
+  geom_pointrange(position = position_dodge(width = 0.60))+
+  geom_hline(yintercept = 1, linetype=2)+
+  coord_flip()+
+  xlab('')+
+  ylab("Adjusted OR (95% CI)")+
+  scale_y_continuous(trans='log10',
+                     breaks=trans_breaks('log10', function(x) 10^x),
+                     labels=trans_format('log10', math_format(10^.x)))+
+  ggtitle("Decreasing Bacterial Alpha Diversity Trend")+
+  geom_errorbar(aes(ymin=Lower, ymax=Upper),width=0.25, position = position_dodge(width = 0.60), size=0.75)+
+  geom_text(aes(x = Element, y = OR, label=stars), color="black", size=7, hjust = 0.5, vjust = 0.1) + 
+  theme_bw()+
+  theme(plot.title = element_text(size=11, hjust = 0.5, face = "bold"),
+        axis.title=element_text(face = "bold", size = 12.5),
+        axis.text = element_text(size = 12.5),
+        legend.title = element_text(face = "bold", size = 11), 
+        legend.text = element_text(size = 11),
+        legend.text.align = 0,
+        legend.position = "none")+
+  scale_color_manual(values=c("darkcyan","aquamarine3","goldenrod2","coral1"))+
+  scale_x_discrete(labels=c("hei2010_10" = "Maternal Healthy Eating Index", "AS_bev41" = "Gestational AS Beverages Consumption",
+                            "BF_3m_statusPartial" = "Partial Breastfeeding (3 Months)", "BF_3m_statusExclusive" = "Exclusive Breastfeeding (3 Months)", 
+                            "Prebirth_abs_oralIV_ynYes" = "Prenatal Antibiotics", "Mother_abs_birth_ynYes" = "Intrapartum Antibiotics", 
+                            "csecC-Section" = "Birth Mode (C-Section)", "sexFemale" = "Infant Sex (Female)", 
+                            "fut2_infantAG" = "Infant FUT2 Secretor Genotype (AG)", "fut2_infantGG" = "Infant FUT2 Secretor Genotype (GG)", 
+                            "fut2_momAG" = "Maternal FUT2 Secretor Genotype (AG)", "fut2_momGG" = "Maternal FUT2 Secretor Genotype (GG)", 
+                            "solids_introduced_months" = "Age at Introduction of Solid Foods"))
+bacteria_lg_fp
 
 
 ## Figure 5C - Fungal Alpha Diversity Trend Random Forest
@@ -136,38 +218,6 @@ bact_rf_plot
 # Filter data for columns of interest
 fungi_rf <- CHILD_metadata_3[, c("Shannon_dif_cat_fungi", "sex", "csec", "BF_3m_status", "BF_duration_imp", "Mother_abs_birth_yn", "Prebirth_abs_oralIV_yn", "Child_3moto1Y_abs", 
                                     "hei2010", "AS_bev4", "Shannon_3m_bacteria", "Shannon_1y_bacteria", "PCoA1_bacteria_3m","PCoA1_bacteria_1y", "fut2_mom", "fut2_infant", "solids_introduced_months")]
-
-# Set column type and add reference levels for each column
-fungi_rf$Shannon_dif_cat_fungi <- as.factor(fungi_rf$Shannon_dif_cat_fungi)
-fungi_rf$Shannon_dif_cat_fungi <- relevel(fungi_rf$Shannon_dif_cat_fungi, ref = "Decrease (Typical)")
-
-fungi_rf$sex <- as.factor(fungi_rf$sex)
-fungi_rf$sex <- relevel(fungi_rf$sex, ref = "Male")
-
-fungi_rf$csec <- as.factor(fungi_rf$csec)
-fungi_rf$csec <- relevel(fungi_rf$csec, ref = "Vaginal")
-
-fungi_rf$BF_3m_status <- as.factor(fungi_rf$BF_3m_status)
-fungi_rf$BF_3m_status <- relevel(fungi_rf$BF_3m_status, ref = "Zero")
-
-fungi_rf$Mother_abs_birth_yn <- as.factor(fungi_rf$Mother_abs_birth_yn)
-fungi_rf$Mother_abs_birth_yn <- relevel(fungi_rf$Mother_abs_birth_yn, ref = "No")
-
-fungi_rf$Prebirth_abs_oralIV_yn <- as.factor(fungi_rf$Prebirth_abs_oralIV_yn)
-fungi_rf$Prebirth_abs_oralIV_yn <- relevel(fungi_rf$Prebirth_abs_oralIV_yn, ref = "No")
-
-fungi_rf$Child_3moto1Y_abs <- as.factor(fungi_rf$Child_3moto1Y_abs)
-fungi_rf$Child_3moto1Y_abs <- relevel(fungi_rf$Child_3moto1Y_abs, ref = "No")
-
-fungi_rf$fut2_infant <- as.factor(fungi_rf$fut2_infant)
-fungi_rf$fut2_infant <- relevel(fungi_rf$fut2_infant, ref = "AA")
-
-fungi_rf$fut2_mom <- as.factor(fungi_rf$fut2_mom)
-fungi_rf$fut2_mom <- relevel(fungi_rf$fut2_mom, ref = "AA")
-
-fungi_rf$BF_duration_imp <- as.numeric(fungi_rf$BF_duration_imp)
-fungi_rf$hei2010 <- as.numeric(fungi_rf$hei2010)
-fungi_rf$solids_introduced_months <- as.numeric(fungi_rf$solids_introduced_months)
 
 # Determine number of NA's
 summary(fungi_rf)
