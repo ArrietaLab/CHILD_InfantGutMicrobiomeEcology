@@ -21,10 +21,11 @@ summary_stats <- function(x) {
   return(c(y=m,ymin=ymin,ymax=ymax))
 }
 
-# Set seed for reproducible results
-set.seed(60145)
 
 ## Figure 1A-B
+
+# Set seed for reproducible results
+set.seed(60145)
 
 # Calculate bacterial alpha diversity metrics (Shannon, Chao1)
 adiv_bacteria <- estimate_richness(ps_bacteria_clean, measures = c("Shannon","Chao1"))
@@ -63,7 +64,7 @@ shannon_fig <- ggplot(CHILD_metadata, aes(x = Sample_time, y = Shannon_bacteria,
 shannon_fig
 
 # Test for normality and perform Wilcox test
-shapiro.test(CHILD_metadata_$Shannon_bacteria)
+shapiro.test(CHILD_metadata$Shannon_bacteria)
 wilcox.test(Shannon_bacteria ~ Sample_time, data = CHILD_metadata)
 
 # Plot bacterial Chao1 index by sample time (Figure 1B)
@@ -81,5 +82,7 @@ chao1_fig <- ggplot(CHILD_metadata, aes(x = Sample_time, y = Chao1_bacteria, fil
 chao1_fig
 
 # Test for normality and perform Wilcox test
-shapiro.test(CHILD_metadata_$Chao1_bacteria)
+shapiro.test(CHILD_metadata$Chao1_bacteria)
 wilcox.test(Chao1_bacteria ~ Sample_time, data = CHILD_metadata)
+
+
