@@ -22,7 +22,7 @@ summary_stats <- function(x) {
 }
 
 
-## Figure 1A-B
+## Figure 1A
 
 # Set seed for reproducible results
 set.seed(60145)
@@ -67,7 +67,7 @@ shannon_fig
 shapiro.test(CHILD_metadata$Shannon_bacteria)
 wilcox.test(Shannon_bacteria ~ Sample_time, data = CHILD_metadata)
 
-# Plot bacterial Chao1 index by sample time (Figure 1B)
+# Plot bacterial Chao1 index by sample time (Figure 1A)
 chao1_fig <- ggplot(CHILD_metadata, aes(x = Sample_time, y = Chao1_bacteria, fill = Sample_time, color = Sample_time)) + 
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   geom_jitter(aes(color = Sample_time), position = position_jitter(0.2),  size = 1.2) + 
@@ -84,5 +84,8 @@ chao1_fig
 # Test for normality and perform Wilcox test
 shapiro.test(CHILD_metadata$Chao1_bacteria)
 wilcox.test(Chao1_bacteria ~ Sample_time, data = CHILD_metadata)
+
+
+
 
 
