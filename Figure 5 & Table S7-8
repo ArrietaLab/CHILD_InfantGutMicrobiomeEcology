@@ -338,7 +338,7 @@ logisticr_df_fungi <- logisticr_df_fungi %>% filter(Factor != "NA")
 # Order variables in dataframe based on random forest results (mean decreasing Gini index) to enable plot comparability
 logisticr_df_fungi$Element <- factor(logisticr_df_fungi$Element, levels = c("csecC-Section", "Child_3moto1Y_absYes", "sexFemale", "Mother_abs_birth_ynYes","fut2_momGG","fut2_momAG", "BF_3m_statusPartial","BF_3m_statusExclusive", "fut2_infantGG", "fut2_infantAG", "solids_introduced_months",  "AS_bev41", "hei2010_10"))
 
-# Forest plot of bacterial alpha diversity trend logisitc regression results (Figure 5B)
+# Forest plot of fungal alpha diversity trend logisitc regression results (Figure 5D)
 fungi_lg_fp <- ggplot(logisticr_df_fungi, aes(x=Element, y=OR, ymin=Lower, ymax=Upper, color = Factor))+
   geom_pointrange(position = position_dodge(width = 0.60))+
   geom_hline(yintercept = 1, linetype=2)+
