@@ -1,1 +1,105 @@
+### Figure 6
+## Normalized metabolite data exported from Metaboanalyst for customized plotting
+## All statistics performed in Metaboanalyst
 
+# Install packages
+library(ggplot2)
+library(tidyverse)
+
+# Create summary statistics function for mean, minimum and maximum (minus one standard deviation)
+summary_stats <- function(x) {
+  m <- mean(x)
+  ymin <- m-sd(x)
+  ymax <- m+sd(x)
+  return(c(y=m,ymin=ymin,ymax=ymax))
+}
+
+# Load normalized metabolite data from Metaboanalyst for plotting
+metabo_3m_prime_bacteria <- read.csv("/Desktop/CHILD/CHILD Metabolomics/metabo_3m_prime_bacteria_normalized.csv", row.names=1, header=T) # Prime metabolites at 3 months by bacterial alpha diversity trend
+metabo_3m_organic_bacteria <- read.csv("/Desktop/CHILD/CHILD Metabolomics/metabo_3m_organic_bacteria_normalized.csv", row.names=1, header=T) # Organic metabolites at 3 months by bacterial alpha diversity trend
+metabo_3m_organic_fungi <- read.csv("/Desktop/CHILD/CHILD Metabolomics/metabo_3m_organic_fungi_normalized.csv", row.names=1, header=T) # Organic metabolites at 3 months by fungal alpha diversity trend
+
+# Add levels to order alpha diversity trends by typical vs. atypical
+metabo_3m_prime_bacteria$Shannon_dif_cat_bacteria <- factor(metabo_3m_prime_bacteria$Shannon_dif_cat_bacteria, levels = c("Increase", "Decrease"))
+metabo_3m_organic_bacteria$Shannon_dif_cat_bacteria <- factor(metabo_3m_organic_bacteria$Shannon_dif_cat_bacteria, levels = c("Increase", "Decrease"))
+metabo_3m_organic_fungi$Shannon_dif_cat_fungi <- factor(metabo_3m_organic_fungi$Shannon_dif_cat_fungi, levels = c("Decrease", "Increase"))
+
+# Figure 6A - Trimethylamine N-Oxide Concentration at 3 Months by Bacterial Alpha Diversity Trend
+tmao_fig <- ggplot(metabo_3m_prime_bacteria, aes(x = Shannon_dif_cat_bacteria, y = Trimethylamine.N.oxide, fill = Shannon_dif_cat_bacteria)) + 
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(aes(color = Shannon_dif_cat_bacteria), position = position_jitter(0.2),  size = 1.2) + 
+  stat_summary(fun.data = summary_stats, size = 0.25)+
+  labs(x="Bacterial Alpha Diversity Trend", y="Normalized Concentration")+
+  scale_color_manual(values = c("black", "black"))+
+  scale_fill_manual(values = c("cyan4","indianred3"))+
+  theme_bw()+
+  ggtitle("Trimethylamine N-Oxide")+
+  theme(axis.title = element_text(size = 11, face = "bold"),
+        axis.text = element_text(size = 11),
+        legend.position = "none",
+        plot.title = element_text(face = "bold", size = 12, color = "black", hjust = 0.5))
+tmao_fig
+
+# Figure 6B - Indole Acetic Acid Concentration at 3 Months by Bacterial Alpha Diversity Trend
+iaa_fig <- ggplot(metabo_3m_prime_bacteria, aes(x = Shannon_dif_cat_bacteria, y = Indole.acetic.acid, fill = Shannon_dif_cat_bacteria)) + 
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(aes(color = Shannon_dif_cat_bacteria), position = position_jitter(0.2),  size = 1.2) + 
+  stat_summary(fun.data = summary_stats, size = 0.25)+
+  labs(x="Bacterial Alpha Diversity Trend", y="Normalized Concentration")+
+  scale_color_manual(values = c("black", "black"))+
+  scale_fill_manual(values = c("cyan4","indianred3"))+
+  theme_bw()+
+  ggtitle("Indole Acetic Acid")+
+  theme(axis.title = element_text(size = 11, face = "bold"),
+        axis.text = element_text(size = 11),
+        legend.position = "none",
+        plot.title = element_text(face = "bold", size = 12, color = "black", hjust = 0.5))
+iaa_fig
+
+# Figure 6C - Creatine Concentration at 3 Months by Bacterial Alpha Diversity Trend
+creat_fig <- ggplot(metabo_3m_prime_bacteria, aes(x = Shannon_dif_cat_bacteria, y = Creatine, fill = Shannon_dif_cat_bacteria)) + 
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(aes(color = Shannon_dif_cat_bacteria), position = position_jitter(0.2),  size = 1.2) + 
+  stat_summary(fun.data = summary_stats, size = 0.25)+
+  labs(x="Bacterial Alpha Diversity Trend", y="Normalized Concentration")+
+  scale_color_manual(values = c("black", "black"))+
+  scale_fill_manual(values = c("cyan4","indianred3"))+
+  theme_bw()+
+  ggtitle("Creatine")+
+  theme(axis.title = element_text(size = 11, face = "bold"),
+        axis.text = element_text(size = 11),
+        legend.position = "none",
+        plot.title = element_text(face = "bold", size = 12, color = "black", hjust = 0.5))
+creat_fig
+
+# Figure 6D - 2-Furoylglycine Concentration at 3 Months by Bacterial Alpha Diversity Trend
+fgly_fig <- ggplot(metabo_3m_organic_bacteria, aes(x = Shannon_dif_cat_bacteria, y = X2.Furoylglycine, fill = Shannon_dif_cat_bacteria)) + 
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(aes(color = Shannon_dif_cat_bacteria), position = position_jitter(0.2),  size = 1.2) + 
+  stat_summary(fun.data = summary_stats, size = 0.25)+
+  labs(x="Bacterial Alpha Diversity Trend", y="Normalized Concentration")+
+  scale_color_manual(values = c("black", "black"))+
+  scale_fill_manual(values = c("cyan4","indianred3"))+
+  theme_bw()+
+  ggtitle("2-Furoylglycine")+
+  theme(axis.title = element_text(size = 11, face = "bold"),
+        axis.text = element_text(size = 11),
+        legend.position = "none",
+        plot.title = element_text(face = "bold", size = 12, color = "black", hjust = 0.5))
+fgly_fig
+
+# Figure 6E - Lactic Acid Concentration at 3 Months by Fungal Alpha Diversity Trend
+lact_fig <- ggplot(metabo_3m_organic_fungi, aes(x = Shannon_dif_cat_fungi, y = Lactic.acid, fill = Shannon_dif_cat_fungi)) + 
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(aes(color = Shannon_dif_cat_fungi), position = position_jitter(0.2),  size = 1.2) + 
+  stat_summary(fun.data = summary_stats, size = 0.25)+
+  labs(x="Fungal Alpha Diversity Trend", y="Normalized Concentration")+
+  scale_color_manual(values = c("black", "black"))+
+  scale_fill_manual(values = c("darkgoldenrod1","indianred3"))+
+  theme_bw()+
+  ggtitle("Lactic Acid")+
+  theme(axis.title = element_text(size = 11, face = "bold"),
+        axis.text = element_text(size = 11),
+        legend.position = "none",
+        plot.title = element_text(face = "bold", size = 12, color = "black", hjust = 0.5))
+lact_fig
