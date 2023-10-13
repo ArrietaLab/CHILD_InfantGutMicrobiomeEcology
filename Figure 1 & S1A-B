@@ -86,6 +86,65 @@ shapiro.test(CHILD_metadata$Chao1_bacteria)
 wilcox.test(Chao1_bacteria ~ Sample_time, data = CHILD_metadata)
 
 
+## Figure 1B
+
+# Create gm_mean function for variance stabilizing transformation (stabilize variants based on sample size)
+gm_mean = function(x, na.rm = TRUE){
+  exp(sum(log(x[x > 0]), na.rm = na.rm) / length(x))
+}
+
+# Variance Stabilizing Transformation
+vst_phyloseq_dseq_bacteria <- phyloseq_to_deseq2(ps_bacteria_clean, ~Sample_time)
+vst_phyloseq_dseq_bacteria = estimateSizeFactors(vst_phyloseq_dseq_bacteria, geoMeans = apply(counts(vst_phyloseq_dseq_bacteria), 1, gm_mean))
+vst_blind <- DESeq2::varianceStabilizingTransformation(vst_phyloseq_dseq_bacteria, blind = TRUE)
+vst_blind_mat_bacteria <- SummarizedExperiment::assay(vst_blind) # Extract transformed OTU table
+vst_blind_mat_bacteria <- t(vst_blind_mat_bacteria)
+vst_blind_mat_bacteria[which(vst_blind_mat_bacteria < 0)] <- 0
+dists <- dist(t(assay(vst_phyloseq_dseq_bacteria)))
+
+# Computing Bray-Curtis Dissimilarities and PCoA
+comm_vst_blind_mat_bacteria<- vegdist(vst_blind_mat_bacteria, "bray")
+PCoA_comm_vst_blind_mat_bacteria <- capscale(comm_vst_blind_mat_bacteria ~ 1, distance = "bray")
+PCoA_comm_vst_blind_mat_bacteria$CA$eig[1:3]/sum(PCoA_comm_vst_blind_mat_bacteria$CA$eig)
+PCoA_scores <- scores(PCoA_comm_vst_blind_mat_bacteria)$sites
+
+# Save PCoA scores into metadata
+row.names(CHILD_metadata) == row.names(scores(PCoA_comm_vst_blind_mat_bacteria)$sites)
+CHILD_metadata$PCoA1_bacteria <- scores(PCoA_comm_vst_blind_mat_bacteria)$sites[,1]
+CHILD_metadata$PCoA2_bacteria <- scores(PCoA_comm_vst_blind_mat_bacteria)$sites[,2]
+
+# Plot bacterial beta diversity by sample time (Figure 1B)
+PCoA_bacteria <- qplot(PCoA1_bacteria, PCoA2_bacteria, xlab = "PCoA1", ylab = "PCoA2",
+                       size = 0.5, shape = Sample_time, fill = Sample_time, color = Sample_time, data = (CHILD_metadata))
+
+PCoA_bacteria <- PCoA_bacteria +
+  stat_ellipse(level = 0.95, geom = "polygon", alpha = 1/6, linetype = 2, size = 0.5, 
+               aes(fill = Sample_time, color = Sample_time)) +
+  scale_shape_manual(name = "Age (Months)", values = c(21:22)) +
+  theme_bw() + 
+  xlab("PCoA1 (11.8%)")+
+  ylab("PCoA2 (5.9%)")+
+  ggtitle("Bacterial Beta Diversity")+
+  theme(legend.title = element_text(colour = "black", size = 13, face = "bold"),
+        legend.text = element_text(colour = "black", size = 13),
+        legend.position = "bottom",
+        axis.title = element_text(face = "bold", size = 13, color = "black"),
+        axis.text = element_text(size = 12),
+        plot.title = element_text(face = "bold", size = 14, color = "black", hjust = 0.5)) +
+  scale_color_manual(name = "Age (Months)", values = c("black","black")) + 
+  scale_fill_manual(name = "Age (Months)", values = c("cyan4","aquamarine2")) + 
+  guides(size = FALSE)
+PCoA_bacteria
+
+# PERMANOVA for bacterial beta diversity by sample time
+permanova_bacteria <- adonis(comm_vst_blind_mat_bacteria ~ Sample_time, data = CHILD_metadata, permutations = 10000)
+permanova_bacteria$aov.tab
+
+
+## Figure 1C
+
+
+
 
 
 
