@@ -1,1 +1,86 @@
+### Figure 2 & S2A-B
 
+# Install packages
+library(phyloseq)
+library(ggplot2)
+library(tidyverse)
+library(DESeq2)
+library(vegan)
+
+# Load phyloseq objects
+load("ps_fungi_clean")
+
+# Extract sample data from phyloseq object to use for analysis
+CHILD_metadata <- as(sample_data(ps_fungi_clean), "data.frame")
+
+# Create summary statistics function for mean, minimum and maximum (minus one standard deviation)
+summary_stats <- function(x) {
+  m <- mean(x)
+  ymin <- m-sd(x)
+  ymax <- m+sd(x)
+  return(c(y=m,ymin=ymin,ymax=ymax))
+}
+
+
+## Figure 2A
+
+# Set seed for reproducible results
+set.seed(60145)
+
+# Calculate bacterial alpha diversity metrics (Shannon, Chao1)
+adiv_bacteria <- estimate_richness(ps_fungi_clean, measures = c("Shannon","Chao1"))
+
+# Create new metadata columns for Chao1 and Shannon
+CHILD_metadata$Shannon_fungi <- adiv_bacteria$Shannon
+CHILD_metadata$Chao1_fungi <- adiv_bacteria$Chao1
+
+# Create filtered dataframes by timepoint
+CHILD_metadata_3 <- CHILD_metadata %>% filter(Sample_time == 3)
+CHILD_metadata_12 <- CHILD_metadata %>% filter(Sample_time == 12)
+
+# Determine the mean and standard deviation of bacterial alpha diversity metrics at 3 and 12 months
+mean(CHILD_metadata_3$Shannon_fungi)
+sd(CHILD_metadata_3$Shannon_fungi)
+mean(CHILD_metadata_12$Shannon_fungi)
+sd(CHILD_metadata_12$Shannon_fungi)
+
+mean(CHILD_metadata_3$Chao1_fungi)
+sd(CHILD_metadata_3$Chao1_fungi)
+mean(CHILD_metadata_12$Chao1_fungi)
+sd(CHILD_metadata_12$Chao1_fungi)
+
+# Plot bacterial Shannon index by sample time (Figure 2A)
+shannon_fig <- ggplot(CHILD_metadata, aes(x = Sample_time, y = Shannon_fungi, fill = Sample_time, color = Sample_time)) + 
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(aes(color = Sample_time), position = position_jitter(0.2),  size = 1.2) + 
+  stat_summary(fun.data = summary_stats, size = 0.25)+
+  labs(x="Age (Months)", y="Fungal Alpha Diversity (Shannon)")+
+  scale_color_manual(values = c("black", "black"))+
+  scale_fill_manual(values = c("cyan4","aquamarine2"))+
+  theme_bw()+
+  theme(axis.title = element_text(size = 11, face = "bold"),
+        axis.text = element_text(size = 10),
+        legend.position = "none")
+shannon_fig
+
+# Test for normality and perform Wilcox test
+shapiro.test(CHILD_metadata$Shannon_fungi)
+wilcox.test(Shannon_fungi ~ Sample_time, data = CHILD_metadata)
+
+# Plot bacterial Chao1 index by sample time (Figure 1A)
+chao1_fig <- ggplot(CHILD_metadata, aes(x = Sample_time, y = Chao1_fungi, fill = Sample_time, color = Sample_time)) + 
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(aes(color = Sample_time), position = position_jitter(0.2),  size = 1.2) + 
+  stat_summary(fun.data = summary_stats, size = 0.25)+
+  labs(x="Age (Months)", y="Fungal Richness (Chao1)")+
+  scale_color_manual(values = c("black", "black"))+
+  scale_fill_manual(values = c("cyan4","aquamarine2"))+
+  theme_bw()+
+  theme(axis.title = element_text(size = 11, face = "bold"),
+        axis.text = element_text(size = 10),
+        legend.position = "none")
+chao1_fig
+
+# Test for normality and perform Wilcox test
+shapiro.test(CHILD_metadata$Chao1_fungi)
+wilcox.test(Chao1_fungi ~ Sample_time, data = CHILD_metadata)
