@@ -208,7 +208,7 @@ CHILD_metadata_chao1 <- CHILD_metadata_chao1 %>% mutate(Chao1_dif_cat_bacteria_n
 CHILD_metadata_chao1$Chao1_dif_cat_bacteria_num <- factor(CHILD_metadata_chao1$Chao1_dif_cat_bacteria_num, levels = c("Increase (n = 87)", "Decrease (n = 11)"))
 
 # Plot change in bacterial Chao1 index per individual from 3 to 12 months (Figure S1A)
-fig <- ggplot(CHILD_metadata_chao1, aes(x = Sample_time, y = Chao1_bacteria, group = CHILD_ID1, color = Chao1_dif_cat_bacteria_num)) +
+bact_chao1_trend <- ggplot(CHILD_metadata_chao1, aes(x = Sample_time, y = Chao1_bacteria, group = CHILD_ID1, color = Chao1_dif_cat_bacteria_num)) +
   geom_point() +
   geom_line(show.legend = F) +
   xlab("Age (Months)")+
@@ -224,7 +224,7 @@ fig <- ggplot(CHILD_metadata_chao1, aes(x = Sample_time, y = Chao1_bacteria, gro
         legend.text = element_text(size = 11),
         legend.text.align = 0,
         legend.position = "right")
-fig
+bact_chao1_trend
 
 # Paired t-test for Chao1 trend from 3 to 12 months per individual
 t.test(CHILD_metadata_3$Chao1_bacteria, 
@@ -234,4 +234,3 @@ t.test(CHILD_metadata_3$Chao1_bacteria,
 
 
 ## Figure 1D
-
