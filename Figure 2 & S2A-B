@@ -460,3 +460,97 @@ PCoA_fungi_12_chao1
 # PERMANOVA for fungal beta diversity by richness trend at 12 months
 permanova_fungi <- adonis(comm_vst_blind_mat_fungi ~ Chao1_dif_cat, data = CHILD_metadata_f_12_chao1, permutations = 10000)
 permanova_fungi$aov.tab
+
+
+## Figure 2E
+
+# Filter ps object by sample time and remove NA values for Shannon 
+ps_fungi_clean_shannon <- subset_samples(ps_fungi_clean, Shannon_dif_cat != "NA")
+ps_fungi_clean_shannon <- subset_samples(ps_fungi_clean_shannon, Sample_time == 3)
+
+# Extract vegan-compatible OTU table from ps object and compute Bray-Curtis dissimilarity
+vegan_otu <- veganotu(ps_fungi_clean_shannon)
+OTU.Bray <- vegdist(vegan_otu, "bray")
+
+# Perform analysis of variance by Shannon trend at 3 months
+adonis2(OTU.Bray ~ Shannon_dif_cat_simple, data = CHILD_metadata_f_3_shannon)
+
+# Set seed for reproducible results
+set.seed(35980123)
+
+# Calculate beta dispersion
+mod1 <- with(CHILD_metadata_f_3_shannon, betadisper(OTU.Bray, Shannon_dif_cat_simple))
+mod1
+
+# Examine distance to centroid plot
+plot(mod1, hull = FALSE, ellipse = TRUE)
+
+# Perform permutation test for beta dispersion at 3 months by Shannon trend
+permutest(mod1)
+
+# Save beta dispersion (distance to centroid) results to dataframe
+betadisp_df_3 <- data.frame(Distance_to_centroid=mod1$distances, Group=mod1$group)
+groups <- mod1$group
+
+# Plot fungal beta dispersion at 3 months by Shannon trend (Figure 2E)
+beta_disp_fig_3 <- ggplot(data = betadisp_df_3 ,aes(x = Group, y = Distance_to_centroid, fill = groups)) + 
+  geom_boxplot(alpha = 0.6)+
+  geom_jitter(position = position_jitter(0.2),  size = 1.2, colour = "black") + 
+  ylab("Distance to Centroid")+
+  xlab("Alpha Diversity Trend")+
+  ggtitle("12 Months")+
+  ylim(0.275,0.87)+
+  scale_color_manual(values = c("black", "black"))+
+  scale_fill_manual(values = c("darkgoldenrod2","indianred3"))+
+  theme_bw()+
+  theme(axis.title = element_text(size = 11, face = "bold"),
+        axis.text = element_text(size = 10),
+        legend.position = "none",
+        plot.title = element_text(size = 11, face = "bold", hjust = 0.5))
+beta_disp_fig_3
+
+
+# Filter ps object by sample time and remove NA values for Shannon 
+ps_fungi_clean_shannon <- subset_samples(ps_fungi_clean, Shannon_dif_cat != "NA")
+ps_fungi_clean_shannon <- subset_samples(ps_fungi_clean_shannon, Sample_time == 12)
+
+# Extract vegan-compatible OTU table from ps object and compute Bray-Curtis dissimilarity
+vegan_otu <- veganotu(ps_fungi_clean_shannon)
+OTU.Bray <- vegdist(vegan_otu, "bray")
+
+# Perform analysis of variance by Shannon trend at 12 months
+adonis2(OTU.Bray ~ Shannon_dif_cat_simple, data = CHILD_metadata_f_12_shannon)
+
+# Set seed for reproducible results
+set.seed(35980123)
+
+# Calculate beta dispersion
+mod1 <- with(CHILD_metadata_f_12_shannon, betadisper(OTU.Bray, Shannon_dif_cat_simple))
+mod1
+
+# Examine distance to centroid plot
+plot(mod1, hull = FALSE, ellipse = TRUE)
+
+# Perform permutation test for beta dispersion at 12 months by Shannon trend
+permutest(mod1)
+
+# Save beta dispersion (distance to centroid) results to dataframe
+betadisp_df_12 <- data.frame(Distance_to_centroid=mod1$distances, Group=mod1$group)
+groups <- mod1$group
+
+# Plot fungal beta dispersion at 12 months by Shannon trend (Figure 2E)
+beta_disp_fig_12 <- ggplot(data = betadisp_df_12,aes(x = Group, y = Distance_to_centroid, fill = groups)) + 
+  geom_boxplot(alpha = 0.6)+
+  geom_jitter(position = position_jitter(0.2),  size = 1.2, colour = "black") + 
+  ylab("Distance to Centroid")+
+  xlab("Alpha Diversity Trend")+
+  ggtitle("3 Months")+
+  ylim(0.275,0.87)+
+  scale_color_manual(values = c("black", "black"))+
+  scale_fill_manual(values = c("darkgoldenrod2","indianred3"))+
+  theme_bw()+
+  theme(axis.title = element_text(size = 11, face = "bold"),
+        axis.text = element_text(size = 10),
+        legend.position = "none",
+        plot.title = element_text(size = 11, face = "bold", hjust = 0.5))
+beta_disp_fig_12
