@@ -186,7 +186,7 @@ bact_shannon_trend <- ggplot(CHILD_metadata_shannon, aes(x = Sample_time, y = Sh
         legend.title = element_text(face = "bold", size = 11, hjust=0.5), 
         legend.text = element_text(size = 11),
         legend.text.align = 0,
-        legend.position = "none")
+        legend.position = "right")
 bact_shannon_trend
 
 # Paired t-test for Shannon trend from 3 to 12 months per individual
