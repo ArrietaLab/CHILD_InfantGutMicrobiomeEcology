@@ -1,1 +1,136 @@
+### Figure 3, S1C, and S2C & Table S1-2
+
+# Install packages
+library(phyloseq)
+library(ggplot2)
+library(tidyverse)
+library(DESeq2)
+library(vegan)
+
+# Create colour palettes
+colours15 <- c("darkcyan","turquoise3","turquoise","aquamarine1","lightgoldenrod1","goldenrod1","orange1","indianred3","indianred2","coral","lightgreen","mediumseagreen","springgreen4","mediumturquoise","paleturquoise1","plum2","orchid4")
+colours15inv <- c("palevioletred","violetred3","maroon4","mediumorchid4","orchid4","indianred3","coral2","coral","orange1","goldenrod1","lightgoldenrod1","mediumseagreen","springgreen4","aquamarine","turquoise3")
+
+## Bacteria
+
+# Load phyloseq object
+load("ps_bacteria_clean")
+
+# Create ps object at genus level with abundance relativized
+ps_bacteria_genus <- tax_glom(ps_bacteria_clean, taxrank = "Genus")
+ps_bacteria_genus <- transform_sample_counts(ps_bacteria_genus, function(OTU) OTU/sum(OTU)) # Generate relative abundance
+
+# Determine 15 most abundant bacterial genera
+top15genus_bacteria <- names(sort(taxa_sums(ps_bacteria_genus), decreasing = TRUE))[1:15] # Select top 15 genera
+ps_top15genus_bacteria <- prune_taxa(top15genus_bacteria, ps_bacteria_genus) # Create new ps object for top 15 genera
+ps_top15genus_bacteria
+pmelt_bacteria_genus15 <- psmelt(ps_top15genus_bacteria) # Melt to dataframe
+
+# Determine percent of community top 15 genera account for at 3 and 12 months (mean and standard deviation)
+ps_bacteria_genus_3_top15 <- subset_samples(ps_top15genus_bacteria, Sample_time == 3)
+asv_genus_3 = as.data.frame(otu_table(ps_bacteria_genus_3_top15), "matrix") %>% mutate(Other = 100*(1-rowSums(.)))
+100-mean(asv_genus_3$Other)
+sd(asv_genus_3$Other)
+
+ps_bacteria_genus_12_top15 <- subset_samples(ps_top15genus_bacteria, Sample_time == 12)
+asv_genus_12 = as.data.frame(otu_table(ps_bacteria_genus_12_top15), "matrix") %>% mutate(Other = 100*(1-rowSums(.)))
+100-mean(asv_genus_12$Other)
+sd(asv_genus_12$Other)
+
+# Rename unclassified taxa for tidy plotting
+pmelt_bacteria_genus_clean <- pmelt_bacteria_genus15 %>% mutate(Genus = dplyr::recode(Genus,
+                              "Enterobacteriaceae_Unclassified" = "Enterobacteriaceae Uncl.",
+                              "Lachnospiraceae_Unclassified" = "Lachnospiraceae Uncl.",
+                              "Rikenellaceae_Unclassified" = "Rikenellaceae Uncl."))
+
+
+## Figure 3A
+
+# Plot relative abundance of top 15 bacterial genera by sample time (Figure 3A)
+bacterial_genus <- ggplot(pmelt_bacteria_genus_clean, aes(x = Sample_time, y = Abundance, fill = Genus, colour = Genus)) + 
+  geom_bar(stat = "identity", position = "fill") + 
+  xlab("Age (Months)") + 
+  ylab("Bacterial Relative Abundance") +
+  scale_color_manual(values = colours15) +
+  scale_fill_manual(values = colours15) +
+  scale_y_continuous(labels = scales::percent)+
+  theme_bw()+
+  theme(panel.background = element_blank(),
+        axis.title = element_text(face = "bold", size = 10),
+        axis.text = element_text(size = 10),
+        legend.title = element_text(face = "bold", size = 9),
+        legend.text = element_text(size = 9, face = "italic"), 
+        legend.text.align = 0,
+        legend.position = "right")
+bacterial_genus
+
+
+## Figure 3B & S1C
+
+# Create new column with new sample time label for tidier plotting
+pmelt_bacteria_genus_clean$Sample_time_month <- pmelt_bacteria_genus_clean$Sample_time
+pmelt_bacteria_genus_clean <- pmelt_bacteria_genus_clean %>% mutate(Sample_time_month = dplyr::recode(Sample_time_month,
+                                                                                                      "3" = "3 Months",
+                                                                                                      "12" = "12 Months"))
+
+# Create new alpha diversity trend columns for tidier plotting
+pmelt_bacteria_genus_clean$Shannon_dif_cat_bacteria_simple <- pmelt_bacteria_genus_clean$Shannon_dif_cat_bacteria
+pmelt_bacteria_genus_clean <- pmelt_bacteria_genus_clean %>% mutate(Shannon_dif_cat_bacteria_simple = dplyr::recode(Shannon_dif_cat_bacteria_simple,
+                                                                                                               "Increase (Typical)" = "Increase",
+                                                                                                               "Decrease (Atypical)" = "Decrease"))
+
+pmelt_bacteria_genus_clean$Chao1_dif_cat_bacteria_simple <- pmelt_bacteria_genus_clean$Chao1_dif_cat_bacteria
+pmelt_bacteria_genus_clean <- pmelt_bacteria_genus_clean %>% mutate(Chao1_dif_cat_bacteria_simple = dplyr::recode(Chao1_dif_cat_bacteria_simple,
+                                                                                                                    "Increase (Typical)" = "Increase",
+                                                                                                                    "Decrease (Atypical)" = "Decrease"))
+
+# Filter out participants lacking data for both timepoints = no alpha diversity trend
+pmelt_bacteria_genus_clean_shannon <- pmelt_bacteria_genus_clean %>% filter(Shannon_dif_cat_bacteria_simple != "NA")
+pmelt_bacteria_genus_clean_chao1 <- pmelt_bacteria_genus_clean %>% filter(Chao1_dif_cat_bacteria_simple != "NA")
+
+# Reorder categories in order of typical vs. "atpical" alpha diversity trend
+pmelt_bacteria_genus_clean_shannon$Shannon_dif_cat_bacteria_simple <- factor(pmelt_bacteria_genus_clean_shannon$Shannon_dif_cat_bacteria_simple, levels = c("Increase", "Decrease"))
+pmelt_bacteria_genus_clean_chao1$Chao1_dif_cat_bacteria_simple <- factor(pmelt_bacteria_genus_clean_chao1$Chao1_dif_cat_bacteria_simple, levels = c("Increase", "Decrease"))
+
+# Plot relative abundance of top 15 bacterial genera by bacterial alpha diversity trend and timepoint (Figure 3B)
+bacterial_genus_shannon <- ggplot(pmelt_bacteria_genus_clean_shannon, aes(x = Shannon_dif_cat_bacteria_simple, y = Abundance, fill = Genus, colour = Genus)) + 
+  geom_bar(stat = "identity", position = "fill") + 
+  xlab("Bacterial Alpha Diversity Trend") + 
+  ylab("Bacterial Relative Abundance") +
+  facet_wrap(~ Sample_time_month) +
+  theme_bw()+
+  scale_color_manual(values = colours15) +
+  scale_fill_manual(values = colours15)+
+  scale_y_continuous(labels = scales::percent)+
+  theme(panel.background = element_blank(),
+        axis.title = element_text(face = "bold", size = 15),
+        axis.text = element_text(size = 14),
+        legend.title = element_text(face = "bold", size = 15),
+        legend.text = element_text(size = 15, face = "italic"), 
+        legend.text.align = 0,
+        legend.position = "right",
+        strip.text.x = element_text(size = 15, face = "bold"),
+        strip.background = element_rect(color = "white", fill = "white", size = 0.5))
+bacterial_genus_shannon
+
+# Plot relative abundance of top 15 bacterial genera at 3 months by bacterial richness trend and timepoint (Figure S1C)
+bacterial_genus_chao1 <- ggplot(pmelt_bacteria_genus_clean_chao1, aes(x = Chao1_dif_cat_bacteria_simple, y = Abundance, fill = Genus, colour = Genus)) + 
+  geom_bar(stat = "identity", position = "fill") + 
+  xlab("Bacterial Richness Trend") + 
+  ylab("Bacterial Relative Abundance") +
+  facet_wrap(~ Sample_time_month) +
+  theme_bw()+
+  scale_color_manual(values = colours15) +
+  scale_fill_manual(values = colours15)+
+  scale_y_continuous(labels = scales::percent)+
+  theme(panel.background = element_blank(),
+        axis.title = element_text(face = "bold", size = 15),
+        axis.text = element_text(size = 14),
+        legend.title = element_text(face = "bold", size = 15),
+        legend.text = element_text(size = 15, face = "italic"), 
+        legend.text.align = 0,
+        legend.position = "right",
+        strip.text.x = element_text(size = 15, face = "bold"),
+        strip.background = element_rect(color = "white", fill = "white", size = 0.5))
+bacterial_genus_chao1
 
