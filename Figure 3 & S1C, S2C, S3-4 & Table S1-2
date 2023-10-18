@@ -198,3 +198,75 @@ fungal_genus
 
 
 ## Figure 3E & S2C
+
+# Create new column with new sample time label for tidier plotting
+pmelt_fungi_genus15$Sample_time_month <- pmelt_fungi_genus15$Sample_time
+pmelt_fungi_genus15 <- pmelt_fungi_genus15 %>% mutate(Sample_time_month = dplyr::recode(Sample_time_month,
+                                                                                        "3" = "3 Months",
+                                                                                        "12" = "12 Months"))
+
+# Create new alpha diversity trend columns for tidier plotting
+pmelt_fungi_genus15$Shannon_dif_cat_fungi_simple <- pmelt_fungi_genus15$Shannon_dif_cat_fungi
+pmelt_fungi_genus15 <- pmelt_fungi_genus15 %>% mutate(Shannon_dif_cat_fungi_simple = dplyr::recode(Shannon_dif_cat_fungi_simple,
+                                                                                                                    "Decrease (Typical)" = "Decrease",
+                                                                                                                    "Increase (Atypical)" = "Increase"))
+
+pmelt_fungi_genus15$Chao1_dif_cat_fungi_simple <- pmelt_fungi_genus15$Chao1_dif_cat_fungi
+pmelt_fungi_genus15 <- pmelt_fungi_genus15 %>% mutate(Chao1_dif_cat_fungi_simple = dplyr::recode(Chao1_dif_cat_fungi_simple,
+                                                                                                                  "Decrease (Typical)" = "Decrease",
+                                                                                                                  "Increase (Atypical)" = "Increase"))
+
+# Filter out participants lacking data for both timepoints = no alpha diversity trend
+pmelt_fungi_genus15_shannon <- pmelt_fungi_genus15 %>% filter(Shannon_dif_cat_fungi_simple != "NA")
+pmelt_fungi_genus15_chao1 <- pmelt_fungi_genus15 %>% filter(Chao1_dif_cat_fungi_simple == c("Increase","Decrease"))
+
+# Plot relative abundance of top 15 fungal genera by fungal alpha diversity trend and timepoint (Figure 3E)
+fungal_genus_shannon <- ggplot(pmelt_fungi_genus15_shannon, aes(x = Shannon_dif_cat_fungi_simple, y = Abundance, fill = Genus, colour = Genus)) + 
+  geom_bar(stat = "identity", position = "fill") + 
+  xlab("Fungal Alpha Diversity Trend") + 
+  ylab("Fungal Relative Abundance") +
+  facet_wrap(~ Sample_time_month) +
+  theme_bw()+
+  scale_color_manual(values = colours15inv) +
+  scale_fill_manual(values = colours15inv)+
+  scale_y_continuous(labels = scales::percent)+
+  theme(panel.background = element_blank(),
+        axis.title = element_text(face = "bold", size = 15),
+        axis.text = element_text(size = 14),
+        legend.title = element_text(face = "bold", size = 15),
+        legend.text = element_text(size = 15, face = "italic"), 
+        legend.text.align = 0,
+        legend.position = "right",
+        strip.text.x = element_text(size = 15, face = "bold"),
+        strip.background = element_rect(color = "white", fill = "white", size = 0.5))
+fungal_genus_shannon 
+
+# Plot relative abundance of top 15 fungal genera by fungal richness trend and timepoint (Figure S2C)
+fungal_genus_chao1 <- ggplot(pmelt_fungi_genus15_shannon, aes(x = Chao1_dif_cat_fungi_simple, y = Abundance, fill = Genus, colour = Genus)) + 
+  geom_bar(stat = "identity", position = "fill") + 
+  xlab("Richness Trend") + 
+  ylab("Fungal Relative Abundance") +
+  facet_wrap(~ Sample_time_month) +
+  theme_bw()+
+  scale_color_manual(values = colours15inv) +
+  scale_fill_manual(values = colours15inv)+
+  scale_y_continuous(labels = scales::percent)+
+  theme(panel.background = element_blank(),
+        axis.title = element_text(face = "bold", size = 15),
+        axis.text = element_text(size = 14),
+        legend.title = element_text(face = "bold", size = 15),
+        legend.text = element_text(size = 15, face = "italic"), 
+        legend.text.align = 0,
+        legend.position = "right",
+        strip.text.x = element_text(size = 15, face = "bold"),
+        strip.background = element_rect(color = "white", fill = "white", size = 0.5))
+fungal_genus_chao1
+
+
+## Table S2
+
+
+
+## Figure 3F
+
+
