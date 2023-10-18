@@ -113,7 +113,7 @@ bacterial_genus_shannon <- ggplot(pmelt_bacteria_genus_clean_shannon, aes(x = Sh
         strip.background = element_rect(color = "white", fill = "white", size = 0.5))
 bacterial_genus_shannon
 
-# Plot relative abundance of top 15 bacterial genera at 3 months by bacterial richness trend and timepoint (Figure S1C)
+# Plot relative abundance of top 15 bacterial genera by bacterial richness trend and timepoint (Figure S1C)
 bacterial_genus_chao1 <- ggplot(pmelt_bacteria_genus_clean_chao1, aes(x = Chao1_dif_cat_bacteria_simple, y = Abundance, fill = Genus, colour = Genus)) + 
   geom_bar(stat = "identity", position = "fill") + 
   xlab("Bacterial Richness Trend") + 
@@ -134,3 +134,67 @@ bacterial_genus_chao1 <- ggplot(pmelt_bacteria_genus_clean_chao1, aes(x = Chao1_
         strip.background = element_rect(color = "white", fill = "white", size = 0.5))
 bacterial_genus_chao1
 
+
+## Table S1
+
+# CLR transform relative abundance data prior to performing statistical assessments
+
+
+
+## Figure 3C
+
+
+
+## Fungi
+
+# Load phyloseq object
+load("ps_fungi_clean")
+
+# Create ps object at genus level with abundance relativized
+ps_fungi_genus <- tax_glom(ps_fungi_clean, taxrank = "Genus")
+ps_fungi_genus <- transform_sample_counts(ps_fungi_genus, function(OTU) OTU/sum(OTU)) # Generate relative abundance
+
+# Determine 15 most abundant fungal genera
+top15genus_fungi <- names(sort(taxa_sums(ps_fungi_genus), decreasing = TRUE))[1:15] # Select top 15 genera
+ps_top15genus_fungi<- prune_taxa(top15genus_fungi, ps_fungi_genus) # Create new ps object for top 15 genera
+ps_top15genus_fungi
+pmelt_fungi_genus15 <- psmelt(ps_top15genus_fungi) # Melt to dataframe
+
+# Determine percent of community top 15 genera account for at 3 and 12 months (mean and standard deviation)
+ps_fungi_genus_3_top15 <- subset_samples(ps_top15genus_fungi, Sample_time == 3)
+asv_genus_3 = as.data.frame(otu_table(ps_fungi_genus_3_top15), "matrix") %>% mutate(Other = 100*(1-rowSums(.)))
+100-mean(asv_genus_3$Other)
+sd(asv_genus_3$Other)
+
+ps_fungi_genus_12_top15 <- subset_samples(ps_top15genus_fungi, Sample_time == 12)
+asv_genus_12 = as.data.frame(otu_table(ps_fungi_genus_12_top15), "matrix") %>% mutate(Other = 100*(1-rowSums(.)))
+100-mean(asv_genus_12$Other)
+sd(asv_genus_12$Other)
+
+# Rename unclassified taxa for tidy plotting
+pmelt_fungi_genus15 <- pmelt_fungi_genus15 %>%  mutate(Genus= str_sub(Genus, 4, -1)) %>% 
+  mutate(Genus = dplyr::recode(Genus,"Sclerotiniaceae_Unclassified" = "Sclerotiniaceae Uncl."))
+
+
+## Figure 3D
+
+# Plot relative abundance of top 15 fungal genera by sample time (Figure 3D)
+fungal_genus <- ggplot(pmelt_fungi_genus15, aes(x = Sample_time, y = Abundance, fill = Genus, colour = Genus)) + 
+  geom_bar(stat = "identity", position = "fill") + 
+  xlab("Age (Months)") + 
+  ylab("Fungal Relative Abundance") +
+  scale_color_manual(values = colours15inv) +
+  scale_fill_manual(values = colours15inv) +
+  scale_y_continuous(labels = scales::percent)+
+  theme_bw()+
+  theme(panel.background = element_blank(),
+        axis.title = element_text(face = "bold", size = 10),
+        axis.text = element_text(size = 10),
+        legend.title = element_text(face = "bold", size = 9),
+        legend.text = element_text(size = 9, face = "italic"), 
+        legend.text.align = 0,
+        legend.position = "right")
+fungal_genus
+
+
+## Figure 3E & S2C
