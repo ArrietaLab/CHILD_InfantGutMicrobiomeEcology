@@ -135,6 +135,34 @@ bacterial_genus_chao1 <- ggplot(pmelt_bacteria_genus_clean_chao1, aes(x = Chao1_
 bacterial_genus_chao1
 
 
+## Figure S3
+
+# Create object with ordered genera names for heatmap plot
+rows_heatmap <- c("Akkermansia", "Bacteroides", "Bifidobacterium", "Blautia", "Enterobacteriaceae Uncl.", "Escherichia", "Faecalibacterium", "Haemophilus", "Klebsiella", "Lachnospiraceae Uncl.", "Parabacteroides", "Rikenellaceae Uncl.", "Roseburia", "Ruminococcus", "Veillonella")
+
+# Plot relative abundance of top 15 bacterial genera by bacterial alpha diversity trend and timepoint per individual (Figure S3)
+bacteria_heatmap <- heat(pmelt_bacteria_genus_clean_shannon, "Genus", "CHILD_ID1", "Abundance", limits = c(0,1), colours = c("white", "paleturquoise2", "turquoise", "turquoise3", "darkcyan"), filter.significant = FALSE, order.cols = rows_heatmap) +
+  xlab("Bacterial Genus") + 
+  ylab("Study ID") +
+  theme_bw()+
+  scale_fill_gradient(low = "white", high = "turquoise3", limits = c(0, 1), labels = percent)+
+  theme(axis.title = element_text(face = "bold", size = 11),
+        plot.title = element_text(face = "bold", size = 12, hjust = 0.5),
+        legend.title = element_text(face = "bold", size = 11),
+        legend.text = element_text(size = 11), 
+        legend.text.align = 0,
+        legend.position = "bottom",
+        axis.text.x = element_text(size = 11, angle = 45, hjust = 1, face = "italic"),
+        axis.text.y = element_text(size = 10),
+        panel.background = element_blank(),
+        strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold"),
+        strip.background = element_rect(color = "white", fill = "white", size = 0.5))+
+  facet_grid(Shannon_dif_cat_bacteria ~ Sample_time_month, scales = "free", space = "free")+
+  guides(fill=guide_legend(title="Relative Abundance"))
+bacteria_heatmap 
+
+
 ## Table S1
 
 # CLR transform relative abundance data prior to performing statistical assessments
@@ -261,6 +289,34 @@ fungal_genus_chao1 <- ggplot(pmelt_fungi_genus15_shannon, aes(x = Chao1_dif_cat_
         strip.text.x = element_text(size = 15, face = "bold"),
         strip.background = element_rect(color = "white", fill = "white", size = 0.5))
 fungal_genus_chao1
+
+
+## Figure S4
+
+# Create object with ordered genera names for heatmap plot
+rows_heatmap <- c("Alternaria", "Candida", "Cladosporium", "Debaryomyces", "Fomitopsis", "Ganoderma", "Malassezia", "Meyerozyma", "Mycosphaerella", "Naganishia", "Resinicium", "Rhodotorula", "Rigidoporus", "Saccharomyces", "Sclerotiniaceae Uncl.")
+
+# Plot relative abundance of top 15 fungal genera by fungal alpha diversity trend and timepoint per individual (Figure S4)
+fungi_heatmap <- heat(pmelt_fungi_genus15_shannon, "Genus", "CHILD_ID1", "Abundance", limits = c(0,1), filter.significant = FALSE, order.cols = rows_heatmap) +
+  xlab("Fungal Genus") + 
+  ylab("Study ID") +
+  theme_bw()+
+  scale_fill_gradient(low = "white", high = "palevioletred", limits = c(0, 1), labels = percent)+
+  theme(axis.title = element_text(face = "bold", size = 11),
+        plot.title = element_text(face = "bold", size = 12, hjust = 0.5),
+        legend.title = element_text(face = "bold", size = 11),
+        legend.text = element_text(size = 11), 
+        legend.text.align = 0,
+        legend.position = "bottom",
+        axis.text.x = element_text(size = 11, angle = 45, hjust = 1, face = "italic"),
+        axis.text.y = element_text(size = 10),
+        panel.background = element_blank(),
+        strip.text.x = element_text(size = 12, face = "bold"),
+        strip.text.y = element_text(size = 12, face = "bold"),
+        strip.background = element_rect(color = "white", fill = "white", size = 0.5))+
+  facet_grid(Shannon_dif_cat~ Sample_time_month, scales = "free", space = "free")+
+  guides(fill=guide_legend(title="Relative Abundance"))
+fungi_heatmap
 
 
 ## Table S2
