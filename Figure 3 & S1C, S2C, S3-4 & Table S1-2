@@ -165,8 +165,55 @@ bacteria_heatmap
 
 ## Table S1
 
-# CLR transform relative abundance data prior to performing statistical assessments
+# CLR transform relative abundance data and create new dataframe for performing statistical assessments
+xt <- microbiome::transform(ps_top15genus_bacteria, 'clr')
+pmelt_bacteria_genus15_clr <- psmelt(xt)
 
+# Create reduced dataframe with columns of interest & ensure column type is correct
+pmelt_bacteria_genus_clr <- pmelt_bacteria_genus15_clr[,c("Abundance","Sample_time","Shannon_dif_cat_bacteria", "Genus")]
+pmelt_bacteria_genus_clr$Sample_time <- as.factor(pmelt_bacteria_genus_clr$Sample_time)
+pmelt_bacteria_genus_clr$Shannon_dif_cat_bacteria <- as.factor(pmelt_bacteria_genus_clr$Shannon_dif_cat_bacteria)
+summary(pmelt_bacteria_genus_clr)
+
+# Set seed for reproducible results
+set.seed(123456)
+
+# Filter CLR-transformed data for each of the top 15 genera and check n
+pmelt_stats <- pmelt_bacteria_genus_clr %>% filter(Genus == "Akkermansia")
+summary(pmelt_stats)
+
+# Statistical assessment of differences in relative abundance by sample time or alpha diversity trend
+# Perform Shapiro test to assess normality
+# Non-normally distributed CLR-transformed abundances were assessed by Mann-Whitney U test (Wilcox test) 
+# Normally distributed abundances were assessed for equality of variance using the F-test, then evaluated by Student’s t-test or Welch’s Two Sample t-test if the variance was equal or unequal, respectively
+
+# Assess differences in relative abundance by sample time
+shapiro.test(pmelt_stats$Abundance)
+wilcox.test(pmelt_stats$Abundance ~ Sample_time, data = pmelt_stats)
+var.test(Abundance ~ Sample_time, data = pmelt_stats)
+t.test(Abundance ~ Sample_time, data = pmelt_stats, var.equal=TRUE)
+
+# Filter out individuals lacking data at both timepoints = no alpha diversity trend and check n
+pmelt_stats_shannon <- pmelt_stats %>% filter(Shannon_dif_cat_bacteria != "NA")
+summary(pmelt_stats_shannon)
+
+# Filter by sample time
+pmelt_stats_3 <- pmelt_stats_shannon %>% filter(Sample_time == 3)
+pmelt_stats_12 <- pmelt_stats_shannon %>% filter(Sample_time == 12)
+
+# Assess differences in relative abundance by alpha diversity trend at 3 months
+shapiro.test(pmelt_stats_3$Abundance)
+wilcox.test(Abundance ~ Shannon_dif_cat_bacteria, data = pmelt_stats_3)
+var.test(Abundance ~ Shannon_dif_cat_bacteria, data = pmelt_stats_3)
+t.test(Abundance ~ Shannon_dif_cat_bacteria, data = pmelt_stats_3, var.equal=TRUE)
+
+# Assess differences in relative abundance by alpha diversity trend at 12 months
+shapiro.test(pmelt_stats_12$Abundance)
+wilcox.test(Abundance ~ Shannon_dif_cat_bacteria, data = pmelt_stats_12)
+var.test(Abundance ~ Shannon_dif_cat_bacteria, data = pmelt_stats_12)
+t.test(Abundance ~ Shannon_dif_cat_bacteria, data = pmelt_stats_12, var.equal=TRUE)
+
+# Single example provided, then genus name swapped out and refiltered for next genus (repeat for all top 15 genera)
 
 
 ## Figure 3C
@@ -321,6 +368,55 @@ fungi_heatmap
 
 ## Table S2
 
+# CLR transform relative abundance data and create new dataframe for performing statistical assessments
+xt <- microbiome::transform(ps_top15genus_fungi, 'clr')
+pmelt_fungi_genus15_clr <- psmelt(xt)
+
+# Create reduced dataframe with columns of interest & ensure column type is correct
+pmelt_fungi_genus15_clr <- pmelt_fungi_genus15_clr[,c("Abundance","Sample_time","Shannon_dif_cat_bacteria", "Genus")]
+pmelt_fungi_genus15_clr$Sample_time <- as.factor(pmelt_fungi_genus15_clr$Sample_time)
+pmelt_fungi_genus15_clr$Shannon_dif_cat_bacteria <- as.factor(pmelt_fungi_genus15_clr$Shannon_dif_cat_bacteria)
+summary(pmelt_fungi_genus15_clr)
+
+# Set seed for reproducible results
+set.seed(123456)
+
+# Filter CLR-transformed data for each of the top 15 genera and check n
+pmelt_stats <- pmelt_fungi_genus15_clr %>% filter(Genus == "Alternaria")
+summary(pmelt_stats)
+
+# Statistical assessment of differences in relative abundance by sample time or alpha diversity trend
+# Perform Shapiro test to assess normality
+# Non-normally distributed CLR-transformed abundances were assessed by Mann-Whitney U test (Wilcox test) 
+# Normally distributed abundances were assessed for equality of variance using the F-test, then evaluated by Student’s t-test or Welch’s Two Sample t-test if the variance was equal or unequal, respectively
+
+# Assess differences in relative abundance by sample time
+shapiro.test(pmelt_stats$Abundance)
+wilcox.test(pmelt_stats$Abundance ~ Sample_time, data = pmelt_stats)
+var.test(Abundance ~ Sample_time, data = pmelt_stats)
+t.test(Abundance ~ Sample_time, data = pmelt_stats, var.equal=TRUE)
+
+# Filter out individuals lacking data at both timepoints = no alpha diversity trend and check n
+pmelt_stats_shannon <- pmelt_stats %>% filter(Shannon_dif_cat_fungi != "NA")
+summary(pmelt_stats_shannon)
+
+# Filter by sample time
+pmelt_stats_3 <- pmelt_stats_shannon %>% filter(Sample_time == 3)
+pmelt_stats_12 <- pmelt_stats_shannon %>% filter(Sample_time == 12)
+
+# Assess differences in relative abundance by alpha diversity trend at 3 months
+shapiro.test(pmelt_stats_3$Abundance)
+wilcox.test(Abundance ~ Shannon_dif_cat_fungi, data = pmelt_stats_3)
+var.test(Abundance ~ Shannon_dif_cat_fungi, data = pmelt_stats_3)
+t.test(Abundance ~ Shannon_dif_cat_fungi, data = pmelt_stats_3, var.equal=TRUE)
+
+# Assess differences in relative abundance by alpha diversity trend at 12 months
+shapiro.test(pmelt_stats_12$Abundance)
+wilcox.test(Abundance ~ Shannon_dif_cat_fungi, data = pmelt_stats_12)
+var.test(Abundance ~ Shannon_dif_cat_fungi, data = pmelt_stats_12)
+t.test(Abundance ~ Shannon_dif_cat_fungi, data = pmelt_stats_12, var.equal=TRUE)
+
+# Single example provided, then genus name swapped out and refiltered for next genus (repeat for all top 15 genera)
 
 
 ## Figure 3F
