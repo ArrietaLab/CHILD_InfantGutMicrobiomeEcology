@@ -373,9 +373,9 @@ xt <- microbiome::transform(ps_top15genus_fungi, 'clr')
 pmelt_fungi_genus15_clr <- psmelt(xt)
 
 # Create reduced dataframe with columns of interest & ensure column type is correct
-pmelt_fungi_genus15_clr <- pmelt_fungi_genus15_clr[,c("Abundance","Sample_time","Shannon_dif_cat_bacteria", "Genus")]
+pmelt_fungi_genus15_clr <- pmelt_fungi_genus15_clr[,c("Abundance","Sample_time","Shannon_dif_cat_fungi", "Genus")]
 pmelt_fungi_genus15_clr$Sample_time <- as.factor(pmelt_fungi_genus15_clr$Sample_time)
-pmelt_fungi_genus15_clr$Shannon_dif_cat_bacteria <- as.factor(pmelt_fungi_genus15_clr$Shannon_dif_cat_bacteria)
+pmelt_fungi_genus15_clr$Shannon_dif_cat_fungi<- as.factor(pmelt_fungi_genus15_clr$Shannon_dif_cat_fungi)
 summary(pmelt_fungi_genus15_clr)
 
 # Set seed for reproducible results
