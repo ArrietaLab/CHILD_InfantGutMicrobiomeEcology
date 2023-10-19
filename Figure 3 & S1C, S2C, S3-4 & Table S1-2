@@ -240,7 +240,7 @@ sigtab_bacteria = cbind(as(sigtab_bacteria, "data.frame"), as(tax_table(ps_bacte
 head(sigtab_bacteria)
 dim(sigtab_bacteria)
 
-# Save 3 months signficance table
+# Save 3 months significance table
 sigtab_bacteria_3m_shannon <- sigtab_bacteria
 sigtab_bacteria_3m_shannon
 
@@ -269,7 +269,7 @@ sigtab_bacteria = cbind(as(sigtab_bacteria, "data.frame"), as(tax_table(ps_bacte
 head(sigtab_bacteria)
 dim(sigtab_bacteria)
 
-# Save 12 months signficance table
+# Save 12 months significance table
 sigtab_bacteria_12m_shannon <- sigtab_bacteria
 sigtab_bacteria_12m_shannon
 
@@ -505,4 +505,86 @@ t.test(Abundance ~ Shannon_dif_cat_fungi, data = pmelt_stats_12, var.equal=TRUE)
 
 ## Figure 3F
 
+# Filter ps object for samples at 3 months and infants who have samples at both timepoints
+ps_fungi_deseq_shannon <- subset_samples(ps_fungi_clean, Shannon_dif_cat != "NA")
+ps_fungi_deseq_shannon <- subset_samples(ps_fungi_deseq_shannon, Sample_time == "3")
 
+# Convert from phyloseq to DESeq based and transform based on fungal alpha diversity trend
+vst_phyloseq_dseq_fungi <- phyloseq_to_deseq2(ps_fungi_deseq_shannon, ~ Shannon_dif_cat)
+vst_phyloseq_dseq_fungi <- estimateSizeFactors(vst_phyloseq_dseq_fungi, type = 'poscounts')
+
+# Apply cutoff to avoid over-representation of rare ASVs
+keep <- rowSums(counts(vst_phyloseq_dseq_fungi)) >= 5000
+vst_phyloseq_dseq_fungi <- vst_phyloseq_dseq_fungi[keep,]
+summary(keep)
+
+# Perform DESeq2 and generate table of significantly differentially abundant ASVs
+vst_phyloseq_dseq_fungi = DESeq(vst_phyloseq_dseq_fungi, test = "Wald", fitType = "parametric") # Does the rest of the DESeq testing with default testing framework.
+res_fungi = results(vst_phyloseq_dseq_fungi, cooksCutoff = FALSE, contrast = c("Shannon_dif_cat", "Decrease (Typical)", "Increase (Atypical)")) # Creates results table of the tests
+alpha_fungi = 0.01
+sigtab_fungi = res_fungi[which(res_fungi$padj < alpha_fungi), ] # Remove entries with NA
+sigtab_fungi = cbind(as(sigtab_fungi, "data.frame"), as(tax_table(ps_fungi_deseq_shannon)[rownames(sigtab_fungi), ], "matrix"))
+head(sigtab_fungi)
+dim(sigtab_fungi)
+
+# Save 3 months significance table
+sigtab_fungi_3m_shannon <- sigtab_fungi
+sigtab_fungi_3m_shannon
+
+# Save results to csv format for merging with 12 months
+write.csv(sigtab_fungi_3m_shannon, "DESEQ 3m Fungi.csv")
+
+# Filter ps object for samples at 12 months and infants who have samples at both timepoints
+ps_fungi_deseq_shannon <- subset_samples(ps_fungi_clean, Shannon_dif_cat != "NA")
+ps_fungi_deseq_shannon <- subset_samples(ps_fungi_deseq_shannon, Sample_time == "12")
+
+# Convert from phyloseq to DESeq based and transform based on fungal alpha diversity trend
+vst_phyloseq_dseq_fungi <- phyloseq_to_deseq2(ps_fungi_deseq_shannon, ~ Shannon_dif_cat)
+vst_phyloseq_dseq_fungi <- estimateSizeFactors(vst_phyloseq_dseq_fungi, type = 'poscounts')
+
+# Apply cutoff to avoid over-representation of rare ASVs
+keep <- rowSums(counts(vst_phyloseq_dseq_fungi)) >= 5000
+vst_phyloseq_dseq_fungi <- vst_phyloseq_dseq_fungi[keep,]
+summary(keep)
+
+# Perform DESeq2 and generate table of significantly differentially abundant ASVs
+vst_phyloseq_dseq_fungi = DESeq(vst_phyloseq_dseq_fungi, test = "Wald", fitType = "parametric") # Does the rest of the DESeq testing with default testing framework.
+res_fungi = results(vst_phyloseq_dseq_fungi, cooksCutoff = FALSE, contrast = c("Shannon_dif_cat", "Decrease (Typical)","Increase (Atypical)")) # Creates results table of the tests
+alpha_fungi = 0.01
+sigtab_fungi = res_fungi[which(res_fungi$padj < alpha_fungi), ] # Remove entries with NA
+sigtab_fungi = cbind(as(sigtab_fungi, "data.frame"), as(tax_table(ps_fungi_deseq_shannon)[rownames(sigtab_fungi), ], "matrix"))
+head(sigtab_fungi)
+dim(sigtab_fungi)
+
+# Save 12 months significance table
+sigtab_fungi_12m_shannon <- sigtab_fungi
+sigtab_fungi_12m_shannon
+
+# Save results to csv format for merging with 3 months
+write.csv(sigtab_fungi_12m_shannon, "DESEQ 12m Fungi.csv")
+
+# Excel: merge 3 and 12 months significance tables for plotting and add column for sample time
+# Reload table of all significantly differentially abundant fungi at 3 and 12 months
+sigtab_fungi <- read.csv("DESEQ Fungi.csv",header = TRUE, row.names = 1)
+
+# Plot differentially abundant bacteria between typical vs. atypical bacterial alpha diversity trend at 3 and 12 months (Figure 3C)
+deseq_fungi <- ggplot(sigtab_fungi, aes(x = factor(Taxa, levels = rev(levels(factor(Taxa)))), y = log2FoldChange, fill = Genus, colour = Genus)) + 
+  geom_col(width=0.53, position = position_dodge(width=0.075))+
+  facet_grid(rows = vars(Sample_time),scales="free", space = "free") +
+  coord_flip()+
+  ylab("Log 2Fold Change")+
+  ggtitle("Differentially Abundant Fungi")+
+  ylim(0,25)+
+  scale_color_manual(values = c("violetred3","turquoise","coral","aquamarine"))+
+  scale_fill_manual(values = c("violetred3","turquoise","coral","aquamarine"))+
+  theme_bw()+
+  theme(panel.background = element_blank(),
+        axis.title = element_text(size = 16.5, face = "bold"),
+        axis.text = element_text(size = 16),
+        axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 16, hjust=1, face = "italic"),
+        plot.title = element_text(size = 16.5, face = "bold", hjust=0.5),
+        strip.text.y = element_text(face = "bold", size = 16.5),
+        strip.background.y = element_blank(),
+        legend.position = "none")
+deseq_fungi
