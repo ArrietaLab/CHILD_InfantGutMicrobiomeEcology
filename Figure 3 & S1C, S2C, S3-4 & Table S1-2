@@ -567,7 +567,7 @@ write.csv(sigtab_fungi_12m_shannon, "DESEQ 12m Fungi.csv")
 # Reload table of all significantly differentially abundant fungi at 3 and 12 months
 sigtab_fungi <- read.csv("DESEQ Fungi.csv",header = TRUE, row.names = 1)
 
-# Plot differentially abundant bacteria between typical vs. atypical bacterial alpha diversity trend at 3 and 12 months (Figure 3C)
+# Plot differentially abundant bacteria between typical vs. atypical bacterial alpha diversity trend at 3 and 12 months (Figure 3F)
 deseq_fungi <- ggplot(sigtab_fungi, aes(x = factor(Taxa, levels = rev(levels(factor(Taxa)))), y = log2FoldChange, fill = Genus, colour = Genus)) + 
   geom_col(width=0.53, position = position_dodge(width=0.075))+
   facet_grid(rows = vars(Sample_time),scales="free", space = "free") +
