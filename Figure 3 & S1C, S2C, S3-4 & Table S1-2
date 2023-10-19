@@ -218,6 +218,90 @@ t.test(Abundance ~ Shannon_dif_cat_bacteria, data = pmelt_stats_12, var.equal=TR
 
 ## Figure 3C
 
+# Filter ps object for samples at 3 months and infants who have samples at both timepoints
+ps_bacteria_deseq_shannon <- subset_samples(ps_bacteria_clean, Shannon_dif_cat_bacteria != "NA")
+ps_bacteria_deseq_shannon <- subset_samples(ps_bacteria_deseq_shannon, Sample_time == "3")
+
+# Convert from phyloseq to DESeq based and transform based on bacterial alpha diversity trend
+vst_phyloseq_dseq_bacteria <- phyloseq_to_deseq2(ps_bacteria_deseq_shannon, ~ Shannon_dif_cat_bacteria)
+vst_phyloseq_dseq_bacteria <- estimateSizeFactors(vst_phyloseq_dseq_bacteria, type = 'poscounts')
+
+# Apply cutoff to avoid over-representation of rare ASVs
+keep <- rowSums(counts(vst_phyloseq_dseq_bacteria)) >= 5000
+vst_phyloseq_dseq_bacteria <- vst_phyloseq_dseq_bacteria[keep,]
+summary(keep)
+
+# Perform DESeq2 and generate table of significantly differentially abundant ASVs
+vst_phyloseq_dseq_bacteria = DESeq(vst_phyloseq_dseq_bacteria, test = "Wald", fitType = "parametric") # Does the rest of the DESeq testing with default testing framework
+res_bacteria = results(vst_phyloseq_dseq_bacteria, cooksCutoff = FALSE, contrast = c("Shannon_dif_cat_bacteria","Increase (Typical)","Decrease (Atypical)")) # Creates results table of the tests
+alpha_bacteria = 0.01
+sigtab_bacteria = res_bacteria[which(res_bacteria$padj < alpha_bacteria), ] # Remove entries with NA
+sigtab_bacteria = cbind(as(sigtab_bacteria, "data.frame"), as(tax_table(ps_bacteria_deseq_shannon)[rownames(sigtab_bacteria), ], "matrix"))
+head(sigtab_bacteria)
+dim(sigtab_bacteria)
+
+# Save 3 months signficance table
+sigtab_bacteria_3m_shannon <- sigtab_bacteria
+sigtab_bacteria_3m_shannon
+
+# Save results to csv format for merging with 12 months
+write.csv(sigtab_bacteria_3m_shannon, "DESEQ 3m Bacteria.csv")
+
+# Filter ps object for samples at 12 months and infants who have samples at both timepoints
+ps_bacteria_deseq_shannon <- subset_samples(ps_bacteria_clean, Shannon_dif_cat_bacteria != "NA")
+ps_bacteria_deseq_shannon <- subset_samples(ps_bacteria_deseq_shannon, Sample_time == "12")
+
+# Convert from phyloseq to DESeq based and transform based on bacterial alpha diversity trend
+vst_phyloseq_dseq_bacteria <- phyloseq_to_deseq2(ps_bacteria_deseq_shannon, ~ Shannon_dif_cat_bacteria)
+vst_phyloseq_dseq_bacteria <- estimateSizeFactors(vst_phyloseq_dseq_bacteria, type = 'poscounts')
+
+# Apply cutoff to avoid over-representation of rare ASVs
+keep <- rowSums(counts(vst_phyloseq_dseq_bacteria)) >= 5000
+vst_phyloseq_dseq_bacteria <- vst_phyloseq_dseq_bacteria[keep,]
+summary(keep)
+
+# Perform DESeq2 and generate table of significantly differentially abundant ASVs
+vst_phyloseq_dseq_bacteria = DESeq(vst_phyloseq_dseq_bacteria, test = "Wald", fitType = "parametric") # Does the rest of the DESeq testing with default testing framework.
+res_bacteria = results(vst_phyloseq_dseq_bacteria, cooksCutoff = FALSE, contrast = c("Shannon_dif_cat_bacteria", "Increase (Typical)", "Decrease (Atypical)")) # Creates results table of the tests
+alpha_bacteria = 0.01
+sigtab_bacteria = res_bacteria[which(res_bacteria$padj < alpha_bacteria), ] # Remove entries with NA
+sigtab_bacteria = cbind(as(sigtab_bacteria, "data.frame"), as(tax_table(ps_bacteria_deseq_shannon)[rownames(sigtab_bacteria), ], "matrix"))
+head(sigtab_bacteria)
+dim(sigtab_bacteria)
+
+# Save 12 months signficance table
+sigtab_bacteria_12m_shannon <- sigtab_bacteria
+sigtab_bacteria_12m_shannon
+
+# Save results to csv format for merging with 3 months
+write.csv(sigtab_bacteria_12m_shannon, "DESEQ 12m Bacteria.csv")
+
+# Excel: merge 3 and 12 months significance tables for plotting and add column for sample time
+# Reload table of all significantly differentially abundant bacteria at 3 and 12 months
+sigtab_bacteria <- read.csv("DESEQ Bacteria.csv",header = TRUE, row.names = 1)
+
+# Plot differentially abundant bacteria between typical vs. atypical bacterial alpha diversity trend at 3 and 12 months (Figure 3C)
+deseq_bacteria <- ggplot(sigtab_bacteria, aes(x = factor(Taxa, levels = rev(levels(factor(Taxa)))), y = log2FoldChange, fill = Genus, colour = Genus)) + 
+  geom_col()+
+  facet_grid(rows = vars(Sample_time),scales="free", space = "free") +
+  coord_flip()+
+  geom_hline(yintercept = 0, color = "grey")+
+  ylab("Log 2Fold Change")+
+  ggtitle("Differentially Abundant Bacteria")+
+  ylim(-27,25)+
+  scale_color_manual(values = c("darkcyan","turquoise3","orchid4","mediumseagreen"))+
+  scale_fill_manual(values = c("darkcyan","turquoise3","orchid4","mediumseagreen"))+
+  theme_bw()+
+  theme(panel.background = element_blank(),
+        axis.title = element_text(size = 16.5, face = "bold"),
+        axis.text = element_text(size = 16),
+        axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 16, hjust=1, face = "italic"),
+        plot.title = element_text(size = 16.5, face = "bold", hjust=0.5),
+        strip.text.y = element_text(face = "bold", size = 16.5),
+        strip.background.y = element_blank(),
+        legend.position = "none")
+deseq_bacteria
 
 
 ## Fungi
