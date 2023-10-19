@@ -1,1 +1,57 @@
+### Figure 4 and S5-7 & Table S3-6
+
+# Install packages
+library(phyloseq)
+library(NetCoMi)
+library(tidyverse)
+
+# Load and rename phyloseq objects
+load("ps_bacteria_clean")
+load("ps_fungi_clean")
+psb <- ps_bacteria_clean
+psf <- ps_fungi_clean
+
+# Load metadata and input into ps object to ensure all the same for both bacteria and fungi
+metadata <- read.csv("16S_CHILD_metadata.csv", row.names = 1)
+sample_data(psb) <- metadata
+sd = data.frame(sample_data(psb))
+
+metadata_f <- read.csv("ITS_CHILD_metadata.csv", row.names = 1)
+sample_data(psf) <- metadata_f
+sd = data.frame(sample_data(psf))
+
+# Rename taxa and OTU tables to includes B_## or F_## to identify each unique asv
+colnames(psb@otu_table)<- paste0("B_",seq(1:ncol(psb@otu_table)))
+rownames(psb@tax_table)<- paste0("B_",seq(1:ncol(psb@otu_table)))
+
+colnames(psf@otu_table)<- paste0("F_",seq(1:ncol(psf@otu_table)))
+rownames(psf@tax_table)<- paste0("F_",seq(1:ncol(psf@otu_table)))
+
+# Set minimum number of reads and percent of samples with taxa
+min_sum = 200 # minimum reads per taxa
+min_prev = 0.1 # percent of samples that have taxa
+
+
+## 3 Months Inter-kingdom Networks
+
+# Filter ps objects for samples at 3 months in 10% of samples and 200 reads per taxa
+psb <- prune_samples(samples = (psb@sam_data$Sample_time == 3), x = psb)
+psb <- prune_taxa(taxa = apply(psb@otu_table, 2, function(x)length(which(x>0)) > nrow(psb@otu_table)*min_prev), x = psb)
+psb <- prune_taxa(taxa_sums(psb) > min_sum,psb)
+
+psf <- prune_samples(samples = (psf@sam_data$Sample_time == 3), x = psf)
+psf <- prune_taxa(taxa = apply(psf@otu_table, 2, function(x)length(which(x>0)) > nrow(psf@otu_table)*min_prev), x = psf)
+psf <- prune_taxa(taxa_sums(psf) > min_sum, psf)
+
+# Combine bacterial and fungal otu tables to include all taxa for both bacteria and fungi
+psb <- prune_samples(samples =intersect(rownames(psf@otu_table),rownames(psb@otu_table)), x = psb)
+psf <- prune_samples(samples =intersect(rownames(psf@otu_table),rownames(psb@otu_table)), x = psf)
+
+# Merge bacterial and fungal ps objects
+merged_3 <- merge_phyloseq(psf,psb)
+
+# Glom taxa to species level
+merged_3 <- tax_glom(physeq = merged_3, taxrank = "Species")
+
+
 
