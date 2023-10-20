@@ -32,7 +32,7 @@ min_sum = 200 # minimum reads per taxa
 min_prev = 0.1 # percent of samples that have taxa
 
 
-## Figure 4
+## Figure 4 & Table S3
 
 ## 3 Months Inter-Kingdom Networks (Figure 4A)
 
@@ -244,6 +244,7 @@ species_names2 <- typical@tax_table[,7] %>%data.frame() %>% rownames_to_column("
 assoc_mat <- bind_cols(netana_cor$input$assoMat1 %>% data.frame() %>% rownames_to_column("row") %>% gather(key=name,value=association_network1,-row),netana_cor$input$assoMat2 %>% data.frame() %>% rownames_to_column("row") %>% gather(key=name,value=association_network2,-row)) %>% rename(microbe1=row...1,microbe2=name...2) %>% select(microbe1,microbe2,association_network1,association_network2)
 assoc_mat<-left_join(assoc_mat,species_names1,by="microbe1") %>% left_join(.,species_names2,by="microbe2")
 DT::datatable(assoc_mat %>%select(microbe1,species1,microbe2,species2,association_network1,association_network2)%>% filter(microbe1!=microbe2))
+
 
 ## 12 Months Inter-Kingdom Networks (Figure 4B)
 
@@ -457,4 +458,88 @@ assoc_mat<-left_join(assoc_mat,species_names1,by="microbe1") %>% left_join(.,spe
 DT::datatable(assoc_mat %>%select(microbe1,species1,microbe2,species2,association_network1,association_network2)%>% filter(microbe1!=microbe2))
 
 
+## Figure S5 & Table S4
+
+# Rename phyloseq objects
+psb <- ps_bacteria_clean
+
+# Load metadata and input into ps object
+metadata <- read.csv("16S_CHILD_metadata.csv", row.names = 1)
+sample_data(psb) <- metadata
+sd = data.frame(sample_data(psb))
+
+# Rename taxa and OTU tables to includes B_## to identify each unique asv
+colnames(psb@otu_table)<- paste0("B_",seq(1:ncol(psb@otu_table)))
+rownames(psb@tax_table)<- paste0("B_",seq(1:ncol(psb@otu_table)))
+
+# Set minimum number of reads and percent of samples with taxa
+min_sum = 200 # minimum reads per taxa
+min_prev = 0.1 # percent of samples that have taxa
+
+# Filter ps objects for samples at 3 months in 10% of samples and 200 reads per taxa
+psb<-prune_samples(samples = (psb@sam_data$Sample_time == 3), x = psb)
+psb<-prune_taxa(taxa = apply(psb@otu_table, 2, function(x)length(which(x>0)) > nrow(psb@otu_table)*min_prev), x = psb)
+psb<-prune_taxa(taxa_sums(psb) > min_sum,psb)
+
+# Glom taxa to species level
+merged0 <- tax_glom(physeq = psb, taxrank = "Species")
+
+# Subset samples into typical and atypical bacterial alpha diversity trends and creat group names
+typical = subset_samples(merged0,  Shannon_dif_cat_bacteria == "Increase (Typical)")
+atypical = subset_samples(merged0,  Shannon_dif_cat_bacteria =="Decrease (Atypical)")
+groups=c("Increase (Typical)", "Decrease (Atypical)")
+
+# Construct networks for typical atypical bacterial alpha diversity trends
+net_cor <- netConstruct(data = typical, data2 = atypical,
+                        measure = "pearson", 
+                        normMethod = "VST", 
+                        zeroMethod = "pseudo", 
+                        sparsMethod = "threshold",
+                        thresh = 0.4, 
+                        verbose = 3, 
+                        seed = 123456)
+
+# Determine network properties for network visualization
+netana_cor <- netAnalyze(net_cor, 
+                         clustMethod = "cluster_fast_greedy", 
+                         centrLCC = TRUE, 
+                         hubPar = "betweenness",
+                         weightDeg = TRUE,
+                         normDeg = FALSE)
+
+# Plot networks for typical vs. atypical bacterial alpha diversity trend at 3 months (Figure S5)
+bacteria_network <- plot(netana_cor, 
+          sameLayout = F, 
+          layout = "spring",
+          repulsion = 0.9, 
+          rmSingles = TRUE, 
+          nodeSize = "degree",
+          nodeColor = "cluster",
+          nodeTransp = 50, 
+          labels = FALSE,
+          cexNodes = 1, 
+          cexLabels = 0.5,
+          cexHubLabels = 0.6,
+          cexTitle = 1.5,
+          groupNames = groups,
+          hubBorderCol  = "black",
+          highlightHubs = TRUE,
+          hubBorderWidth = 2,
+          borderWidth = 1,
+          edgeWidth = 0.3)
+bacteria_network
+
+# Compute statistics for network properties (Table S4)
+comp_season <- netCompare(netana_cor, permTest = F, nPerm = 5000 ,verbose = FALSE, seed = 123456)
+summary(comp_season, 
+        groupNames = groups,
+        showCentr = c("degree", "between", "closeness"), 
+        numbNodes = 5)
+
+# Create matrix of associations between microbes (used to identify relationships and label hubs in figure)
+species_names1<-typical@tax_table[,7] %>%data.frame() %>% rownames_to_column("microbe1")%>% rename(species1=Species)
+species_names2<-typical@tax_table[,7] %>%data.frame() %>% rownames_to_column("microbe2")%>% rename(species2=Species)
+assoc_mat<-bind_cols(netana_cor$input$assoMat1 %>% data.frame() %>% rownames_to_column("row") %>% gather(key=name,value=association_network1,-row),netana_cor$input$assoMat2 %>% data.frame() %>% rownames_to_column("row") %>% gather(key=name,value=association_network2,-row)) %>% rename(microbe1=row...1,microbe2=name...2) %>% select(microbe1,microbe2,association_network1,association_network2)
+assoc_mat<-left_join(assoc_mat,species_names1,by="microbe1") %>% left_join(.,species_names2,by="microbe2")
+DT::datatable(assoc_mat %>%select(microbe1,species1,microbe2,species2,association_network1,association_network2)%>% filter(microbe1!=microbe2))
 
